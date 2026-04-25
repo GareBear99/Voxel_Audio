@@ -837,3 +837,23 @@ For the current audited and production-hardened package state, use these docs fi
 | `docs/ARCHITECTURE.md` | Runtime layer map and quality ladder. |
 | `docs/PRODUCTION_HARDENING_PASS.md` | v1.8.0 runtime hardening details and remaining SaaS blockers. |
 | `docs/RESET_AND_BACK_BEHAVIOR.md` | Correct Reset/Back behavior after v1.7.1 binding fix. |
+
+
+### v1.8.4 Title Render Revert
+
+The v1.8.2/v1.8.3 title marquee experiment has been reverted. Export title rendering is restored to v1.8.1 behavior while keeping Song Title Authority intact. See `docs/TITLE_RENDER_REVERT.md`.
+
+
+### v1.8.5 Side Metadata Scroll Fix
+
+The small `VOXEL AUDIO EXPORT • song • artist/feat` export metadata line now scrolls inside a clipped safe lane and cannot overlap the reactive circle. Main title rendering is untouched. See `docs/SIDE_METADATA_SCROLL_FIX.md`.
+
+
+### v1.8.6 Preview Scroll Clock Fix
+
+Live Export Preview now correctly shows the small metadata line scrolling because the preview renderer uses a persistent timing clock instead of resetting every frame. Main title rendering is untouched. See `docs/PREVIEW_SCROLL_CLOCK_FIX.md`.
+
+
+### v1.8.7 Side Metadata End Pause
+
+The small side metadata scroll now holds longer at the end before resetting back to the start. Main title rendering remains untouched. See `docs/SIDE_METADATA_END_PAUSE.md`.

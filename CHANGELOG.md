@@ -1,5 +1,34 @@
 # Changelog
 
+## v1.8.7 — Longer side metadata end pause
+
+- Increased the end pause on the small side metadata scroll before it resets.
+- Kept scroll speed, start pause, and main title rendering unchanged.
+- Added `docs/SIDE_METADATA_END_PAUSE.md`.
+
+## v1.8.6 — Preview side-scroll clock fix
+
+- Fixed the Live Export Preview side metadata line not visibly scrolling.
+- Root cause: preview was passing `performance.now()` every frame, resetting the animation timer.
+- Added a persistent preview clock so the side metadata line now scrolls correctly.
+- Main title rendering remains untouched.
+- Added `docs/PREVIEW_SCROLL_CLOCK_FIX.md`.
+
+## v1.8.5 — Side metadata scroll fix
+
+- Fixed only the small `VOXEL AUDIO EXPORT • song • artist/feat` side text line.
+- Added a clipped safe scrolling lane so long metadata cannot overlap the reactive circle.
+- Main export title rendering is untouched and remains reverted to v1.8.1/v1.8.4 behavior.
+- Added `docs/SIDE_METADATA_SCROLL_FIX.md`.
+
+## v1.8.4 — Revert title marquee experiment
+
+- Reverted the v1.8.2/v1.8.3 title marquee changes.
+- Restored the export title renderer to v1.8.1 behavior.
+- Removed title animation, ghost repeat behavior, title safe-box shrink, and title fade logic.
+- Kept v1.8.1 Song Title Authority intact so Song name still beats filename.
+- Added `docs/TITLE_RENDER_REVERT.md`.
+
 ## v1.8.1 — Song title authority fix
 
 - Fixed preview/export title authority so the visible Song name wins over raw filename.

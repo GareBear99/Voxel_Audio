@@ -300,7 +300,7 @@ const canvas=document.getElementById('c'),ctx=canvas.getContext('2d',{alpha:fals
 const statusText=document.getElementById('statusText'),trackList=document.getElementById('trackList'),hoverCard=document.getElementById('hoverCard'),hoverTitle=document.getElementById('hoverTitle'),hoverGrid=document.getElementById('hoverGrid'),rightPanel=document.getElementById('rightPanel'),seedInput=document.getElementById('seedInput'),seedFooter=document.getElementById('seedFooter'),mainViewBtn=document.getElementById('mainViewBtn'),themeBtn=document.getElementById('themeBtn'),qualityBtn=document.getElementById('qualityBtn'),preflightBtn=document.getElementById('preflightBtn'),formatBtn=document.getElementById('formatBtn'),testExportBtn=document.getElementById('testExportBtn'),recordExportBtn=document.getElementById('recordExportBtn'),qualityFooter=document.getElementById('qualityFooter'),viewFooter=document.getElementById('viewFooter'),pathBar=document.getElementById('pathBar'),depthFooter=document.getElementById('depthFooter'),folderInput=document.getElementById('folderInput'),searchInput=document.getElementById('searchInput'),searchFooter=document.getElementById('searchFooter'),imageInput=document.getElementById('imageInput'),bindingInput=document.getElementById('bindingInput'),exportBindingsBtn=document.getElementById('exportBindingsBtn'),dockExportBindingsBtn=document.getElementById('dockExportBindingsBtn'),dockOpenBtn=document.getElementById('dockOpenBtn'),dockBindBtn=document.getElementById('dockBindBtn'),dockInfoBtn=document.getElementById('dockInfoBtn'),dockPreviewBtn=document.getElementById('dockPreviewBtn'),dockRecordBtn=document.getElementById('dockRecordBtn'),dockVaultBtn=document.getElementById('dockVaultBtn'),dockKitBtn=document.getElementById('dockKitBtn'),dockAlbumBtn=document.getElementById('dockAlbumBtn'),playBtn=document.getElementById('playBtn'),audio=document.getElementById('audio'),seek=document.getElementById('seek'),timeRead=document.getElementById('timeRead'),durRead=document.getElementById('durRead'),floatingImage=document.getElementById('floatingImage'),borderColor=document.getElementById('borderColor'),waveColor=document.getElementById('waveColor'),dropHint=document.getElementById('dropHint'),nowPlaying=document.getElementById('nowPlaying'),validatorState=document.getElementById('validatorState'),folderSummary=document.getElementById('folderSummary'),exportBtn=document.getElementById('exportBtn'),infoBtn=document.getElementById('infoBtn'),albumRouteBtn=document.getElementById('albumRouteBtn'),albumOverlay=document.getElementById('albumOverlay'),albumTitleInput=document.getElementById('albumTitleInput'),albumRouteInput=document.getElementById('albumRouteInput'),albumList=document.getElementById('albumList'),albumReason=document.getElementById('albumReason'),closeAlbumBtn=document.getElementById('closeAlbumBtn'),albumAddSelectedBtn=document.getElementById('albumAddSelectedBtn'),albumAddVisibleBtn=document.getElementById('albumAddVisibleBtn'),albumAddFolderBtn=document.getElementById('albumAddFolderBtn'),albumAddAllBtn=document.getElementById('albumAddAllBtn'),albumClearBtn=document.getElementById('albumClearBtn'),albumUseCurrentImageBtn=document.getElementById('albumUseCurrentImageBtn'),albumBuildBtn=document.getElementById('albumBuildBtn'),albumColorInput=document.getElementById('albumColorInput'),albumApplyColorAllBtn=document.getElementById('albumApplyColorAllBtn'),albumResetColorsBtn=document.getElementById('albumResetColorsBtn'),docsOverlay=document.getElementById('docsOverlay'),docsContent=document.getElementById('docsContent'),closeDocsBtn=document.getElementById('closeDocsBtn'),previewExportBtn=document.getElementById('previewExportBtn'),previewPanel=document.getElementById('previewPanel'),previewCanvas=document.getElementById('previewCanvas'),previewState=document.getElementById('previewState'),previewPlayBtn=document.getElementById('previewPlayBtn'),closePreviewBtn=document.getElementById('closePreviewBtn'),exportPanel=document.getElementById('exportPanel'),exportState=document.getElementById('exportState'),exportInfo=document.getElementById('exportInfo'),exportTitleInput=document.getElementById('exportTitleInput'),exportArtistInput=document.getElementById('exportArtistInput'),exportFeatInput=document.getElementById('exportFeatInput'),exportDescriptionInput=document.getElementById('exportDescriptionInput'),singleExportColorInput=document.getElementById('singleExportColorInput'),adminNameInput=document.getElementById('adminNameInput'),adminKeyInput=document.getElementById('adminKeyInput'),adminUnlockBtn=document.getElementById('adminUnlockBtn'),adminLockBtn=document.getElementById('adminLockBtn'),adminWatermarkState=document.getElementById('adminWatermarkState'),exportFill=document.getElementById('exportFill'),exportReason=document.getElementById('exportReason'),exportLog=document.getElementById('exportLog'),exportHistoryPanel=document.getElementById('exportHistoryPanel'),exportHistoryList=document.getElementById('exportHistoryList'),exportHistoryCount=document.getElementById('exportHistoryCount'),closeVaultBtn=document.getElementById('closeVaultBtn'),cancelExportBtn=document.getElementById('cancelExportBtn'),downloadLogBtn=document.getElementById('downloadLogBtn'),copyLogBtn=document.getElementById('copyLogBtn');
 const QUALITY={lite:{fps:18,waveFps:12,audioFps:18,dpr:.85,maxIcon:120,maxWeb:32,maxLinks:24,bars:20,waveStep:32,grid:96,shadow:false,labels:false,sections:false,analyserFft:256,floatMs:110},eco:{fps:24,waveFps:18,audioFps:24,dpr:1,maxIcon:220,maxWeb:72,maxLinks:60,bars:32,waveStep:16,grid:72,shadow:false,labels:false,sections:false,analyserFft:512,floatMs:80},auto:{fps:36,waveFps:24,audioFps:30,dpr:1.15,maxIcon:520,maxWeb:160,maxLinks:150,bars:48,waveStep:10,grid:48,shadow:false,labels:true,sections:true,analyserFft:1024,floatMs:45},high:{fps:60,waveFps:45,audioFps:45,dpr:1.5,maxIcon:1200,maxWeb:360,maxLinks:420,bars:80,waveStep:5,grid:28,shadow:true,labels:true,sections:true,analyserFft:2048,floatMs:0}};let qualityMode='auto',Q=QUALITY.auto;let w=0,h=0,dpr=1,waveW=0,waveH=0,lastFrame=0,lastWaveFrame=0,lastAudioFrame=0,lastDomUpdate=0,lastCssUpdate=0,lastHoverMove=0,lastFloatUpdate=0,lastQualityShift=0,frameCostAvg=0,frameCostSamples=0,tracks=[],objects=[],objectMap=new Map(),sections=[],webNodes=[],webLinks=[],registryLabels=[],CATEGORY_COLORS={},visibleCache=[],visibleSectionCache=[],visibleIdSet=new Set(),folderVisibleCounts=new Map(),seedHex='F1B49B1CB10D6FED',mainView='icon',theme='dark',hubVisible=true,focusedFolder=null,focusedObjectId=null,hovered=null,zoom=1,panX=0,panY=0,dragging=false,lastX=0,lastY=0,tNow=0,currentTrack=null,currentUrl=null,searchQuery='';let bgCanvas=null,bgCtx=null,bgKey='';
 let audioContext,analyser,source,freqData,timeData,beat=0,beatHold=0,lastEnergy=0,energy=0,bass=0,mid=0,treble=0,waveHex='#28e7ff',borderHex='#bc7cff';
-let exporting=false,exportCancel=false,exportRecorder=null,exportChunks=[],exportCanvas=null,exportCtx=null,exportRaf=0,exportStartWall=0,exportAudioDestination=null,exportMime='video/webm',exportLogLines=[],lastExportBlobUrl=null,exportFormatPreference='auto',exportMaxSeconds=null,kitSpeedPreset='fast',sessionExportHistory=[],adminWatermarkUnlocked=false,singleExportColorOverride='',singleExportColorManual=false,previewActive=false,previewImage=null,previewCtx=null,previewRaf=0,exportWaveSmooth=null,exportBarSmooth=null,exportLastSmoothTrack=null,albumRouteIds=[],albumFallbackImageTrackId=null,albumColorOverrides=new Map();
+let exporting=false,exportCancel=false,exportRecorder=null,exportChunks=[],exportCanvas=null,exportCtx=null,exportRaf=0,exportStartWall=0,exportAudioDestination=null,exportMime='video/webm',exportLogLines=[],lastExportBlobUrl=null,exportFormatPreference='auto',exportMaxSeconds=null,kitSpeedPreset='fast',sessionExportHistory=[],adminWatermarkUnlocked=false,singleExportColorOverride='',singleExportColorManual=false,previewActive=false,previewImage=null,previewCtx=null,previewRaf=0,previewStartWall=0,previewScrollTrackId='',exportWaveSmooth=null,exportBarSmooth=null,exportLastSmoothTrack=null,albumRouteIds=[],albumFallbackImageTrackId=null,albumColorOverrides=new Map();
 const TAU=Math.PI*2,AUDIO_EXT=/\.(mp3|wav|ogg|m4a|aac|flac|opus|webm)$/i;
 if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r,w/2,h/2);this.moveTo(x+r,y);this.lineTo(x+w-r,y);this.quadraticCurveTo(x+w,y,x+w,y+r);this.lineTo(x+w,y+h-r);this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);this.lineTo(x+r,y+h);this.quadraticCurveTo(x,y+h,x,y+h-r);this.lineTo(x,y+r);this.quadraticCurveTo(x,y,x+r,y);return this}}
 
@@ -1063,6 +1063,33 @@ function fitTextEllipsis(g,text,maxWidth){
   return out+'…';
 }
 
+function drawSafeSideScrollText(g,text,x,y,maxW,lineH,startedAt,opts={}){
+  const s=String(text||'');
+  if(!s)return;
+  const w=g.measureText(s).width;
+  g.save();
+  g.beginPath();
+  g.rect(x,y-3,maxW,lineH+6);
+  g.clip();
+
+  let offset=0;
+  if(w>maxW){
+    const speed=opts.speed||26;
+    const startPause=opts.startPause||1300;
+    const endPause=opts.endPause||1400;
+    const travel=Math.max(0,w-maxW);
+    const travelMs=Math.max(1000,(travel/speed)*1000);
+    const cycle=startPause+travelMs+endPause;
+    const local=((performance.now()-(startedAt||0))%cycle+cycle)%cycle;
+    if(local<startPause)offset=0;
+    else if(local<startPause+travelMs)offset=-((local-startPause)/travelMs)*travel;
+    else offset=-travel;
+  }
+
+  g.fillText(s,x+offset,y);
+  g.restore();
+}
+
 function drawReactiveCircleVisualizer(g,cx,cy,baseR,accent){
   const bassR=baseR + bass*22;
   const midR=baseR + 9 + mid*18;
@@ -1200,8 +1227,9 @@ function renderExportVideoFrame(g,canvas,img,tr,startedAt){
   if(credit) meta+='  •  '+credit;
   g.font='13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
   g.fillStyle=rgbaHex(accent,.78);
-  const metaSafe=fitTextEllipsis(g,meta,560);
-  g.fillText(metaSafe,540,metaY);
+  // Metadata side-scroll lane only. Do not animate or alter the main title.
+  // The lane ends before the reactive circle so long artist/feat text cannot overlap it.
+  drawSafeSideScrollText(g,meta,540,metaY,390,18,startedAt,{speed:26,startPause:1300,endPause:3600});
 
   // Compact metadata panel. If Description is blank, the panel becomes a tighter
   // visualizer capsule instead of leaving empty text space.
@@ -1782,6 +1810,8 @@ async function openExportPreview(){
   previewActive=true;
   previewCtx=previewCanvas.getContext('2d',{alpha:false});
   previewImage=await loadImageElement(tr.image);
+  previewStartWall=performance.now();
+  previewScrollTrackId=tr&&tr.id?tr.id:'';
   previewState.textContent='previewing '+getExportTitle(tr);
   setExportReason('Live export preview opened.','This shows the final 1280×720 export layout while audio plays. Edit Song name, Artist, Feat, or Description anytime to see it update. Leave Description blank for a compact visualizer capsule.');
   validatorState.textContent='PREVIEW_OPEN';
@@ -1806,6 +1836,8 @@ async function playPreviewTrack(){
 function closeExportPreview(){
   previewActive=false;
   if(previewRaf)cancelAnimationFrame(previewRaf);
+  previewStartWall=0;
+  previewScrollTrackId='';
   previewPanel.classList.remove('active');
   previewState.textContent='closed';
   validatorState.textContent='PREVIEW_CLOSED';
@@ -1814,7 +1846,12 @@ function previewLoop(){
   if(!previewActive)return;
   const tr=currentTrack||getSelectedPlayableTrack();
   if(previewCtx&&tr){
-    renderExportVideoFrame(previewCtx,previewCanvas,previewImage,tr,performance.now());
+    const trId=tr&&tr.id?tr.id:'';
+    if(!previewStartWall || previewScrollTrackId!==trId){
+      previewStartWall=performance.now();
+      previewScrollTrackId=trId;
+    }
+    renderExportVideoFrame(previewCtx,previewCanvas,previewImage,tr,previewStartWall);
   }
   previewRaf=requestAnimationFrame(previewLoop);
 }
