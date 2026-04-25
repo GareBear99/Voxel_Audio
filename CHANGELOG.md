@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.8.10 — Restore Browser MP4 with direct audio capture
+
+- Restored Browser Record MP4 as an available option.
+- Changed recorder audio capture priority to direct `<audio>.captureStream()` first.
+- Kept WebAudio MediaStreamDestination as fallback.
+- Added mixed stream audio/video track verification before recording starts.
+- Added detailed recorder audio-policy logs.
+- Added `docs/MP4_DIRECT_AUDIO_RESTORE.md`.
+
 ## v1.8.7 — Longer side metadata end pause
 
 - Increased the end pause on the small side metadata scroll before it resets.

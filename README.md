@@ -857,3 +857,8 @@ Live Export Preview now correctly shows the small metadata line scrolling becaus
 ### v1.8.7 Side Metadata End Pause
 
 The small side metadata scroll now holds longer at the end before resetting back to the start. Main title rendering remains untouched. See `docs/SIDE_METADATA_END_PAUSE.md`.
+
+
+### v1.8.10 MP4 Direct Audio Restore
+
+Browser Record MP4 is restored and now tries direct `<audio>.captureStream()` before WebAudio capture to reduce silent MP4 exports. The recorder logs audio/video track counts before recording starts. See `docs/MP4_DIRECT_AUDIO_RESTORE.md`.

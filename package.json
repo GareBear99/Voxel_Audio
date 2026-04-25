@@ -1,6 +1,6 @@
 {
   "name": "voxel-audio",
-  "version": "1.8.7",
+  "version": "1.8.10",
   "private": false,
   "description": "Production-track no-server RGB voxel audio visualizer platform with Lite/Eco adaptive renderer, audio-sync governor, browser Record vault, album routes, and deterministic FFmpeg MP4 kits.",
   "keywords": [
