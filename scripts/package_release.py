@@ -10,6 +10,10 @@ with zipfile.ZipFile(OUT, "w", zipfile.ZIP_DEFLATED) as z:
     for path in ROOT.rglob("*"):
         if ".git" in path.parts:
             continue
+        if path.name in {"app.extracted.js"}:
+            continue
+        if path.suffix == ".zip":
+            continue
         if path.is_file():
             z.write(path, path.relative_to(ROOT.parent))
 

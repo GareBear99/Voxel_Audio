@@ -1,5 +1,33 @@
 # Voxel Audio
 
+## Current release status — v1.8.0
+
+This package has been audited and aligned as a **low-weight local creator tool**:
+
+- Local-first folder audio visualizer.
+- Playable voxel directory for detected audio files.
+- Image binding per track.
+- Artist-required export metadata with 36-character cap.
+- Live export preview.
+- Browser Record for quick previews.
+- Session Export Vault with edit/re-export.
+- Deterministic FFmpeg MP4 Kit for production output.
+- Album Route Builder for multi-track render kits.
+- Lite / Eco / Auto / High performance ladder for older hardware.
+- Reset/Back button bindings corrected in v1.7.1 after audit.
+- Production hardening in v1.8.0: Lite mode, cached background render, hidden-tab pause, web-node draw caps, throttled artwork transforms, debounced resize, and automatic performance governor.
+
+The no-server build is usable now. Google OAuth, Stripe, account quotas, and server FFmpeg rendering are roadmap systems, not active local-build features yet.
+
+See:
+
+- `docs/EXTENSIVE_AUDIT_REPORT.md`
+- `docs/PERFORMANCE_TUNING.md`
+- `docs/SONG_TITLE_AUTHORITY.md`
+- `docs/RELEASE_STATUS.md`
+- `docs/OPERATOR_MANUAL.md`
+
+
 **Voxel Audio** is a local-first, browser-based audio visualizer and export tool that turns a folder of songs into a playable voxel directory, binds artwork to tracks, previews SoundCloud-style export layouts live, and builds deterministic FFmpeg MP4 render kits for single tracks or full albums.
 
 <p align="center">
@@ -792,3 +820,20 @@ The issue was that the real audio-file branch played the track but skipped the c
 
 - **Reset** fully returns the app to startup state and clears the loaded session.
 - **Back** only backs out of panels, folder focus, search, selected voxel focus, or zoom. It does not delete the loaded folder/session.
+
+---
+
+## v1.8.0 production documentation map
+
+For the current audited and production-hardened package state, use these docs first:
+
+| Document | Purpose |
+|---|---|
+| `docs/EXTENSIVE_AUDIT_REPORT.md` | Full package audit, confirmed capabilities, known constraints, and next engineering pass. |
+| `docs/PERFORMANCE_TUNING.md`
+- `docs/SONG_TITLE_AUTHORITY.md` | Weak-hardware Lite/Eco operating guide and performance governor notes. |
+| `docs/RELEASE_STATUS.md` | What is ready now vs. what is still roadmap. |
+| `docs/OPERATOR_MANUAL.md` | Straight usage manual for loading, binding, previewing, recording, vault, and FFmpeg kit workflow. |
+| `docs/ARCHITECTURE.md` | Runtime layer map and quality ladder. |
+| `docs/PRODUCTION_HARDENING_PASS.md` | v1.8.0 runtime hardening details and remaining SaaS blockers. |
+| `docs/RESET_AND_BACK_BEHAVIOR.md` | Correct Reset/Back behavior after v1.7.1 binding fix. |

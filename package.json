@@ -1,8 +1,8 @@
 {
   "name": "voxel-audio",
-  "version": "1.6.9",
+  "version": "1.8.1",
   "private": false,
-  "description": "Proto-Synth powered no-server RGB voxel audio visualizer platform with browser record exports, session vault, binding maps, album routes, and FFmpeg MP4 kits.",
+  "description": "Production-track no-server RGB voxel audio visualizer platform with Lite/Eco adaptive renderer, audio-sync governor, browser Record vault, album routes, and deterministic FFmpeg MP4 kits.",
   "keywords": [
     "audio-visualizer",
     "music-visualizer",
@@ -87,12 +87,27 @@
     "playtrack-color-sync",
     "voxel-export-color",
     "reset-behavior",
-    "back-navigation"
+    "back-navigation",
+    "low-weight-renderer",
+    "adaptive-quality",
+    "weak-hardware-mode",
+    "audio-sync",
+    "lite-mode",
+    "performance-governor",
+    "production-hardening",
+    "static-background-cache",
+    "hidden-tab-pause",
+    "adaptive-renderer",
+    "weak-hardware",
+    "song-title-metadata",
+    "id3-title",
+    "preview-title-fix",
+    "filename-fallback"
   ],
   "scripts": {
     "start": "python3 -m http.server 8080",
     "serve": "python3 -m http.server 8080",
-    "check:js": "node --check scripts/extract-app-js.js || true",
+    "check:js": "node scripts/extract-app-js.js && node --check app.extracted.js",
     "release:zip": "python3 scripts/package_release.py"
   },
   "repository": {

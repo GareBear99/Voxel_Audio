@@ -1,5 +1,48 @@
 # Changelog
 
+## v1.8.1 — Song title authority fix
+
+- Fixed preview/export title authority so the visible Song name wins over raw filename.
+- Added lightweight ID3v2 MP3 `TIT2` reader and WAV/RIFF `INAM` reader for embedded song titles.
+- Browser Hub, hover cards, Now Playing, preview canvas, browser Record filenames, vault names, binding maps, and FFmpeg manifest now prefer the canonical song title.
+- Filename is now treated only as a fallback and original source-file trace, not the public export title.
+- Manual Song name edits persist onto the selected track and update the preview/export path live.
+
+## v1.8.0 — Production hardening / weak-hardware renderer
+
+- Added `Quality: Lite`.
+- Added automatic performance governor: High → Auto → Eco → Lite.
+- Added static background cache for the main canvas.
+- Added hidden-tab render skip.
+- Added debounced resize handling.
+- Added Web Node draw caps in low modes.
+- Suppressed registry labels when low-quality modes disable labels.
+- Throttled floating artwork transform updates in Lite/Eco.
+- Reduced analyser loop work further in Lite.
+- Updated docs for production status, performance tuning, and release readiness.
+- Fixed package `check:js` so syntax validation fails properly instead of being ignored.
+
+
+## 1.7.1 — Documentation Audit + Reset/Back Binding Alignment
+
+- Added `docs/EXTENSIVE_AUDIT_REPORT.md` with package scope, confirmed behavior, known constraints, and next engineering pass.
+- Added `docs/PERFORMANCE_TUNING.md` for weak hardware, Eco mode, sync drift, and production workflow guidance.
+- Added `docs/RELEASE_STATUS.md` to clearly separate ready local features from planned Google OAuth/Stripe/server FFmpeg systems.
+- Added `docs/OPERATOR_MANUAL.md` as the practical usage guide.
+- Expanded architecture docs with render/sync model and exact quality ladder.
+- Updated troubleshooting docs for lag, sync drift, browser recording failures, and admin unlock persistence.
+- Corrected Reset/Back button bindings so they call the intended helper functions.
+- Aligned Reset so it clears the loaded track registry before returning to startup/demo state.
+
+
+## 1.7.0 — Low-Weight Render Sync Pass
+
+- Added split render clocks for voxel scene, waveform, and audio analyser.
+- Lowered Eco/Auto GPU and FFT pressure for weak hardware.
+- Disabled expensive web glow shadows outside High quality.
+- Added low-weight docs for recommended weak-hardware settings.
+
+
 ## 1.6.9 — Reset and Back Behavior Fix
 
 - Reset now hard-resets the app back to startup state.
