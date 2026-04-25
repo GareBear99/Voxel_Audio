@@ -1,0 +1,12 @@
+{
+  "app": "Voxel Audio",
+  "mode": "single-track-ffmpeg-kit",
+  "trackName": "Example Song.wav",
+  "exportTitle": "Example Song",
+  "audioFile": "Example_Song_audio.wav",
+  "imageFile": "Example_Song_cover.png",
+  "outputFile": "Example_Song_Voxel_Audio.mp4",
+  "renderer": "FFmpeg libx264 + AAC",
+  "resolution": "1280x720",
+  "color": "#28e7ff"
+}

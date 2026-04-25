@@ -1,0 +1,1775 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="description" content="Voxel Audio is a no-server local audio visualizer, browser record exporter, and FFmpeg MP4 render kit builder for songs and albums."/>
+<meta name="theme-color" content="#28e7ff"/>
+<title>Voxel Audio — No-Server Local Visualizer + Record Export</title>
+<style>
+:root{
+  --panel:#050814cc;--text:#f2e8ff;--muted:#9fa7bf;
+  --borderRgb:#bc7cff;--waveRgb:#28e7ff;--beat:0;--energy:0;--bass:0;--mid:0;--treble:0;
+}
+*{box-sizing:border-box} html,body{height:100%;margin:0;overflow:hidden;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:#05070d;color:var(--text)}
+canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+body:before{content:"";position:fixed;inset:0;z-index:20;pointer-events:none;border:solid calc(2px + var(--beat)*8px) var(--borderRgb);box-shadow:inset 0 0 calc(18px + var(--beat)*60px) var(--borderRgb),0 0 calc(10px + var(--beat)*42px) var(--borderRgb);opacity:calc(.20 + var(--beat)*.46);filter:blur(calc(var(--beat)*3px))}body.perf-eco:before{border-width:2px;box-shadow:inset 0 0 calc(12px + var(--beat)*32px) var(--borderRgb);filter:none;opacity:calc(.18 + var(--beat)*.36)}
+body:after{content:"";position:fixed;inset:0;z-index:2;pointer-events:none;background:radial-gradient(circle at 50% 48%,rgba(188,124,255,.045),transparent 34%),radial-gradient(circle at 20% 80%,rgba(40,231,255,calc(var(--treble)*.07)),transparent 25%),radial-gradient(circle at 82% 22%,rgba(255,92,160,calc(var(--bass)*.08)),transparent 28%);mix-blend-mode:screen;opacity:.72}body.perf-eco:after{opacity:.35}
+.topbar{position:fixed;left:10px;right:10px;top:10px;z-index:30;display:flex;gap:8px;align-items:center;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin}.topbar::-webkit-scrollbar{height:4px}.topbar::-webkit-scrollbar-thumb{background:rgba(188,124,255,.28);border-radius:999px}.topbar>*{flex:0 0 auto}.btn,.seedBox,.seedInput,.fileBtn,.searchBox{background:#060b16dd;border:1px solid color-mix(in srgb,var(--borderRgb) 60%,transparent);color:#fff;border-radius:12px;padding:10px 12px;font-size:12px;line-height:1;box-shadow:0 0 0 1px rgba(255,255,255,.02) inset,0 0 18px color-mix(in srgb,var(--borderRgb) 22%,transparent)}.btn,.fileBtn{cursor:pointer}.fileBtn{position:relative;overflow:hidden}.fileBtn input{position:absolute;inset:0;opacity:0;cursor:pointer}.seedBox{display:flex;align-items:center;gap:8px;padding:6px 8px}.searchBox{display:flex;align-items:center;gap:8px;padding:6px 8px;min-width:260px;flex:0 1 420px;max-width:420px}.searchBox input{width:100%;min-width:150px;outline:none;border:0;color:#fff;background:transparent;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.searchBox input::placeholder{color:#7f879d}.seedInput{min-width:170px;outline:none;border-radius:9px;padding:8px 10px;background:rgba(255,255,255,.03)}.colorBox{display:flex;gap:6px;align-items:center}.colorBox input{width:34px;height:30px;border:0;background:transparent;cursor:pointer}.panel,.hovercard{position:fixed;background:var(--panel);border:1px solid color-mix(in srgb,var(--borderRgb) 45%,transparent);border-radius:16px;box-shadow:0 0 24px color-mix(in srgb,var(--borderRgb) 18%,transparent),inset 0 0 28px rgba(97,42,145,.08);backdrop-filter:blur(8px);z-index:25}.leftpanel{left:16px;top:86px;width:380px;height:280px;padding:12px 14px;overflow:auto}.rightpanel{right:16px;top:86px;width:360px;height:280px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;overflow:hidden;transition:transform .18s ease,opacity .18s ease}.rightpanel.hidden{transform:translateX(110%);opacity:0;pointer-events:none}.bottomleft{left:14px;bottom:176px;padding:8px 12px;width:820px;max-width:calc(100vw - 380px)}.hovercard{display:none;pointer-events:none;padding:10px 12px;min-width:260px;z-index:40}.title{position:fixed;left:18px;top:53px;z-index:24;font-family:Georgia,serif;letter-spacing:.18em;font-size:18px;color:#ffc98c}.subtitle{position:fixed;left:19px;top:76px;z-index:24;font-size:10px;letter-spacing:.28em;color:#a7afc6;text-transform:uppercase}h3{margin:0 0 8px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#fff4d5}.mono,.small{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.mono{font-size:11px;line-height:1.35;white-space:pre-wrap;color:#f6f2ff}.small{font-size:11px;color:var(--muted)}.footerline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px}.badge,.pill{padding:2px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}.trackRow{display:grid;grid-template-columns:16px 1fr auto auto;gap:7px;align-items:center;padding:7px 0;border-top:1px solid rgba(255,255,255,.06)}.swatch{width:12px;height:12px;border-radius:3px;box-shadow:0 0 8px rgba(255,255,255,.18)}.trackName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#trackList{min-height:0;overflow:auto;padding-right:4px;scrollbar-width:thin}.rightpanel>div:nth-child(2){min-height:0;flex:1;display:flex;flex-direction:column}.miniBtn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:5px 8px;font-size:10px;cursor:pointer}.pathbar{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.pathchip{padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);font:10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.notice{margin-top:8px;color:#c8cee7;font-size:10px;line-height:1.45}.hoverTitle{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#fff4d5;margin-bottom:6px}.hoverGrid{display:grid;grid-template-columns:84px 1fr;gap:5px 8px;font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#d6daf2}.wavePanel{position:fixed;left:14px;right:14px;bottom:12px;height:150px;z-index:24;border:1px solid color-mix(in srgb,var(--borderRgb) 42%,transparent);border-radius:18px;background:rgba(5,8,20,.84);backdrop-filter:blur(6px);box-shadow:inset 0 0 22px rgba(97,42,145,.055),0 0 18px rgba(0,0,0,.22);overflow:hidden}.wavePanel canvas{position:absolute;inset:0;width:100%;height:100%}.playerBar{position:absolute;left:12px;right:12px;top:10px;z-index:3;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}.playerBar input[type=range]{width:100%;accent-color:var(--waveRgb)}#floatingImage{position:fixed;left:50%;top:47%;width:min(250px,28vw);height:min(250px,28vw);object-fit:contain;z-index:18;pointer-events:none;display:none;border-radius:18px;filter:drop-shadow(0 0 calc(16px + var(--beat)*58px) var(--borderRgb));transform-style:preserve-3d;border:0!important;outline:0!important}.dropHint{position:fixed;right:18px;bottom:176px;width:330px;z-index:24;padding:11px 13px;border-radius:14px;background:#050814aa;border:1px dashed color-mix(in srgb,var(--borderRgb) 50%,transparent);font-size:11px;color:#c8cee7;line-height:1.45}.dropHint.hot{background:color-mix(in srgb,var(--borderRgb) 20%,#050814aa);border-style:solid}
+
+
+.albumOverlay{position:fixed;inset:0;z-index:58;background:rgba(0,0,0,.58);backdrop-filter:blur(8px);display:none;padding:22px}
+.albumOverlay.active{display:block}
+.albumShell{height:100%;max-width:1120px;margin:0 auto;border:1px solid color-mix(in srgb,var(--waveRgb) 55%,transparent);border-radius:20px;background:rgba(5,8,20,.96);box-shadow:0 0 34px color-mix(in srgb,var(--waveRgb) 22%,transparent);display:flex;flex-direction:column;overflow:hidden}
+.albumHeader{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+.albumBody{min-height:0;flex:1;display:grid;grid-template-columns:360px 1fr;gap:0}
+.albumControls{padding:14px;border-right:1px solid rgba(255,255,255,.08);overflow:auto}
+.albumList{min-height:0;overflow:auto;padding:14px}
+.albumTrack{display:grid;grid-template-columns:26px 1fr auto auto;gap:10px;align-items:center;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);border-radius:12px;padding:8px 10px;margin-bottom:8px}
+.albumTrack .num{font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#aeb8d8}
+.albumTrack .meta{min-width:0}
+.albumTrack .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;font:12px system-ui,Segoe UI,Arial}
+.albumTrack .route{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#9fa7bf;font:10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.albumTrack .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}.albumColorPick{width:34px;height:28px;border:0;background:transparent;cursor:pointer}
+@media(max-width:820px){.albumOverlay{padding:10px}.albumBody{grid-template-columns:1fr}.albumControls{border-right:0;border-bottom:1px solid rgba(255,255,255,.08);max-height:280px}.albumList{padding:10px}}
+
+.docsOverlay{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.62);backdrop-filter:blur(8px);display:none;padding:22px}
+.docsOverlay.active{display:block}
+.docsShell{height:100%;max-width:1180px;margin:0 auto;border:1px solid color-mix(in srgb,var(--borderRgb) 55%,transparent);border-radius:20px;background:rgba(5,8,20,.96);box-shadow:0 0 34px color-mix(in srgb,var(--borderRgb) 22%,transparent);display:flex;flex-direction:column;overflow:hidden}
+.docsHeader{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+.docsKicker{font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);letter-spacing:.24em;text-transform:uppercase}
+.docsTitle{font:800 20px system-ui,Segoe UI,Arial,sans-serif;color:#fff4d5;letter-spacing:.08em;text-transform:uppercase}
+.docsBody{min-height:0;flex:1;display:grid;grid-template-columns:230px 1fr}
+.docsNav{min-height:0;overflow:auto;padding:12px;border-right:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:7px}
+.docsNav button{width:100%;text-align:left;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.035);color:#dbe2ff;padding:9px 10px;font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;cursor:pointer}
+.docsNav button.active,.docsNav button:hover{border-color:color-mix(in srgb,var(--waveRgb) 70%,transparent);background:color-mix(in srgb,var(--waveRgb) 14%,rgba(255,255,255,.035));color:#fff}
+.docsContent{min-height:0;overflow:auto;padding:18px 22px 28px;color:#dbe2ff;font-size:13px;line-height:1.6}
+.docsContent h2{margin:0 0 10px;color:#fff;font-size:22px}
+.docsContent h3{margin:22px 0 8px;color:#fff4d5;font-size:13px;letter-spacing:.14em;text-transform:uppercase}
+.docsContent p{margin:8px 0}
+.docsContent ul,.docsContent ol{margin:8px 0 12px 22px;padding:0}
+.docsContent li{margin:5px 0}
+.docsContent code{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:1px 5px;color:#fff}
+.docsContent pre{overflow:auto;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;color:#d8f6ff}
+.docsRouteBadge{display:inline-block;margin:0 6px 6px 0;border:1px solid rgba(255,255,255,.10);border-radius:999px;padding:3px 8px;background:rgba(255,255,255,.04);font:10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#aeb8d8}
+@media(max-width:760px){.docsOverlay{padding:10px}.docsBody{grid-template-columns:1fr}.docsNav{max-height:150px;border-right:0;border-bottom:1px solid rgba(255,255,255,.08)}.docsContent{padding:14px}}
+
+.previewPanel{position:fixed;left:50%;top:52%;transform:translate(-50%,-50%);width:min(980px,calc(100vw - 48px));z-index:34;padding:12px;border-radius:18px;background:rgba(5,8,20,.94);border:1px solid color-mix(in srgb,var(--waveRgb) 55%,transparent);box-shadow:0 0 28px color-mix(in srgb,var(--waveRgb) 22%,transparent);backdrop-filter:blur(10px);display:none}
+.previewPanel.active{display:block}
+.previewTop{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}
+.previewActions{display:flex;gap:8px;align-items:center}
+#previewCanvas{position:relative;display:block;width:100%;height:auto;aspect-ratio:16/9;border-radius:14px;background:#05070d}
+.previewHint{margin-top:8px;color:#aeb8d8}
+body.hub-clean .previewPanel.active{display:block!important}
+.exportPanel{position:fixed;right:16px;bottom:176px;width:400px;z-index:31;padding:12px 14px;border-radius:16px;background:rgba(5,8,20,.92);border:1px solid color-mix(in srgb,var(--waveRgb) 55%,transparent);box-shadow:0 0 24px color-mix(in srgb,var(--waveRgb) 18%,transparent);backdrop-filter:blur(8px);display:none}
+.exportPanel.active{display:block}
+.exportPanel .exportTop{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
+.exportPanel .exportTitle{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#fff4d5}
+.exportNameBox{display:flex;gap:8px;align-items:center;margin-top:7px;border:1px solid rgba(255,255,255,.10);border-radius:12px;background:rgba(255,255,255,.035);padding:7px 9px}.exportNameBox span{font:10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#aeb8d8;text-transform:uppercase;white-space:nowrap}.exportNameBox input{width:100%;border:0;outline:0;background:transparent;color:#fff;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.exportBar{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin:8px 0}
+.exportFill{height:100%;width:0%;background:var(--waveRgb);box-shadow:0 0 16px var(--waveRgb)}
+.exportActions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.exportReason{margin-top:8px;color:#dce8ff;font:10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;line-height:1.35;white-space:pre-wrap}
+.exportLog{margin:8px 0 0;max-height:116px;overflow:auto;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(0,0,0,.22);padding:8px;color:#aeb8d8;font:10px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap}
+body.hub-clean .exportPanel:not(.active){display:none!important}
+
+.exportHistoryPanel{position:fixed;left:16px;bottom:176px;width:420px;max-height:310px;z-index:31;padding:12px 14px;border-radius:16px;background:rgba(5,8,20,.92);border:1px solid color-mix(in srgb,var(--borderRgb) 42%,transparent);box-shadow:0 0 20px color-mix(in srgb,var(--borderRgb) 16%,transparent);backdrop-filter:blur(8px);display:none;overflow:hidden}
+.exportHistoryPanel.active{display:block}
+.exportHistoryList{margin-top:8px;display:flex;flex-direction:column;gap:7px;max-height:218px;overflow:auto;padding-right:4px}
+.exportHistoryItem{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.035);padding:7px 8px}
+.exportHistoryName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;font:10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.exportHistoryMeta{color:#9fa7bf;font:9px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin-top:2px}
+body.hub-clean .exportHistoryPanel.active{display:block!important}
+
+
+body.hub-clean .topbar{left:auto;right:10px;top:10px;width:auto;max-width:220px;justify-content:flex-end}
+body.hub-clean .topbar{right:auto;max-width:calc(100vw - 20px);flex-wrap:nowrap}
+body.hub-clean .topbar>:not(#hubToggleBtn):not(#folderBtn):not(.searchBox){display:none!important}
+body.hub-clean #hubToggleBtn,body.hub-clean #folderBtn,body.hub-clean .searchBox{display:flex!important;align-items:center;white-space:nowrap}
+body.hub-clean #hubToggleBtn{border-color:color-mix(in srgb,var(--waveRgb) 70%,transparent);box-shadow:0 0 22px color-mix(in srgb,var(--waveRgb) 28%,transparent)}
+body.hub-clean #folderBtn{width:42px;height:38px;min-width:42px;justify-content:center;padding:0;font-size:0;border-color:color-mix(in srgb,var(--waveRgb) 70%,transparent);box-shadow:0 0 22px color-mix(in srgb,var(--waveRgb) 24%,transparent)}
+body.hub-clean #folderBtn:before{content:"+";font-size:24px;line-height:1;font-weight:800;color:#fff;text-shadow:0 0 14px var(--waveRgb)}
+body.hub-clean #folderBtn .folderText{display:none!important}
+body.hub-clean .searchBox{width:min(420px,calc(100vw - 190px));min-width:160px;max-width:420px;flex:0 1 420px}
+body.hub-clean .leftpanel,body.hub-clean .rightpanel,body.hub-clean .bottomleft,body.hub-clean .title,body.hub-clean .subtitle,body.hub-clean .dropHint,body.hub-clean .hovercard{display:none!important}
+body.hub-clean .wavePanel{z-index:26}
+body.perf-eco .panel,body.perf-eco .hovercard,body.perf-eco .wavePanel{backdrop-filter:none}body.perf-eco #floatingImage{filter:drop-shadow(0 0 calc(8px + var(--beat)*24px) var(--borderRgb))}body.perf-eco .wavePanel{height:130px}@media(max-width:720px){.topbar{gap:6px}.searchBox{min-width:150px}.wavePanel{height:124px}.playerBar{top:8px}.btn,.fileBtn,.searchBox{padding:8px 9px}}@media(max-width:1200px){.rightpanel{display:none}.bottomleft{max-width:calc(100vw - 28px);width:auto;right:14px}.leftpanel{width:calc(100vw - 32px)}}
+
+/* no-server reliability patch */
+input[type=file]{color:transparent}
+.fileBtn input[type=file]{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;opacity:0!important;color:transparent!important;font-size:0!important;cursor:pointer!important}
+.fileBtn input[type=file]::-webkit-file-upload-button{visibility:hidden}
+.topbar{padding-right:12px;max-height:48px}
+.quickDock{position:fixed;right:12px;top:58px;z-index:55;display:flex;gap:6px;align-items:center;max-width:calc(100vw - 24px);overflow-x:auto;scrollbar-width:thin;padding:4px;border:1px solid color-mix(in srgb,var(--borderRgb) 35%,transparent);border-radius:14px;background:rgba(5,8,20,.76);backdrop-filter:blur(8px);box-shadow:0 0 18px color-mix(in srgb,var(--borderRgb) 18%,transparent)}
+.quickBtn{flex:0 0 auto;border:1px solid color-mix(in srgb,var(--waveRgb) 42%,transparent);background:rgba(255,255,255,.04);color:#fff;border-radius:10px;padding:7px 9px;font:10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;cursor:pointer}
+.quickBtn:hover{background:color-mix(in srgb,var(--waveRgb) 16%,rgba(255,255,255,.04));border-color:color-mix(in srgb,var(--waveRgb) 78%,transparent)}
+.bootDiag{position:fixed;left:50%;transform:translateX(-50%);top:104px;z-index:54;display:none;max-width:min(720px,calc(100vw - 28px));padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.10);background:rgba(5,8,20,.88);color:#cfd8ff;font:10px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;box-shadow:0 0 18px rgba(0,0,0,.35)}
+.bootDiag.active{display:block}
+body.hub-clean .quickDock{display:flex!important}
+body.hub-clean .bootDiag.active{display:block!important}
+@media(max-width:760px){.quickDock{left:10px;right:10px;top:58px}.title{top:96px}.subtitle{top:119px}.leftpanel,.rightpanel{top:136px}}
+
+
+/* compact topbar no duplicates patch */
+#folderBtn,
+#topBindImageBtn,
+#previewExportBtn,
+#albumRouteBtn,
+#testExportBtn,
+#recordExportBtn,
+#exportBtn,
+#infoBtn{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  overflow:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+#topBindImageBtn input,
+#folderBtn input{
+  pointer-events:auto!important;
+}
+.topbar{padding-right:10px;max-height:48px}
+.quickDock{top:52px}
+
+
+.exportHistoryEdit{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}
+.exportHistoryEdit input{min-width:0;border:1px solid rgba(255,255,255,.10);border-radius:8px;background:rgba(0,0,0,.20);color:#fff;padding:5px 7px;font:10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.exportHistoryEdit input[type=color]{padding:0;height:28px;cursor:pointer}
+.exportHistoryActions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+
+</style>
+</head>
+<body>
+<div class="topbar">
+  <label class="fileBtn" id="folderBtn"><span class="folderText">Open Audio Folder</span><input id="folderInput" type="file" webkitdirectory directory multiple accept="audio/*"/></label>
+  <label class="searchBox"><span class="small">Search</span><input id="searchInput" type="search" placeholder="type filename, folder, extension, group..." autocomplete="off"/></label>
+  <label class="fileBtn" id="topBindImageBtn">Bind Image To Selected<input id="imageInput" type="file" accept="image/*"/></label>
+  <div class="btn" id="playBtn">Play</div><div class="btn" id="backBtn">Back</div><div class="btn" id="resetBtn">Reset</div><div class="btn" id="recenterBtn">Recenter</div>
+  <div class="seedBox"><span class="small">Seed</span><input class="seedInput mono" id="seedInput" value="F1B49B1CB10D6FED"/></div>
+  <div class="btn" id="applySeedBtn">Apply Seed</div><div class="btn" id="randomSeedBtn">Randomize</div>
+  <div class="btn" id="mainViewBtn">Current View: Voxel Icon</div><div class="btn" id="themeBtn">Theme: Dark</div><div class="btn" id="qualityBtn">Quality: Auto</div><div class="btn" id="preflightBtn">Preflight</div><div class="btn" id="previewExportBtn">Preview Export</div><div class="btn" id="albumRouteBtn">Album Route</div><div class="btn" id="kitSpeedBtn">Kit: Fast</div><div class="btn" id="formatBtn">Record: Auto</div><div class="btn" id="testExportBtn">10s Record</div><div class="btn" id="recordExportBtn">Record Full</div><div class="btn" id="exportBtn">Build MP4 Kit</div><div class="btn" id="infoBtn">ⓘ Info</div><div class="btn" id="hubToggleBtn">Hub: Visible</div>
+  <label class="btn colorBox">Border <input id="borderColor" type="color" value="#bc7cff"/></label>
+  <label class="btn colorBox">Wave <input id="waveColor" type="color" value="#28e7ff"/></label>
+<input id="bindingInput" type="file" accept="application/json,.json" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"/><button id="exportBindingsBtn" type="button" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">Export Bindings</button>
+</div>
+
+<div class="quickDock" id="quickDock" aria-label="Quick actions">
+  <button class="quickBtn" id="dockOpenBtn" title="Open Audio Folder">＋ Folder</button>
+  <button class="quickBtn" id="dockBindBtn" title="Bind image to selected">＋ Image</button>
+  <button class="quickBtn" id="dockInfoBtn" title="Open Info Docs">ⓘ Info</button>
+  <button class="quickBtn" id="dockPreviewBtn" title="Preview export layout">Preview</button>
+  <button class="quickBtn" id="dockRecordBtn" title="Record full preview">Record</button><button class="quickBtn" id="dockVaultBtn" title="Show Session Export Vault">Vault</button>
+  <button class="quickBtn" id="dockKitBtn" title="Build MP4 Kit">MP4 Kit</button>
+  <button class="quickBtn" id="dockAlbumBtn" title="Open Album Route">Album</button>
+  <button class="quickBtn" id="dockExportBindingsBtn" title="Export binding map">Bindings</button>
+</div>
+<div class="bootDiag" id="bootDiag" aria-live="polite"></div>
+
+<div class="title">VOXEL AUDIO</div><div class="subtitle">no-server local audio visualizer / browser record / MP4 render kit</div>
+<canvas id="c"></canvas><img id="floatingImage" alt="bound visual"/>
+<div class="panel leftpanel"><h3>Unified Audio Directory Status</h3><div class="mono" id="statusText"></div><div class="pathbar" id="pathBar"></div><div class="notice">Open or drag/drop a folder anywhere. Every detected playable audio file becomes a voxel. Click any voxel or track row to play. Drag an image onto a voxel or use “Bind Image To Selected”.</div></div>
+<div class="panel rightpanel" id="rightPanel"><div><h3>Browser Hub</h3><div class="small" id="folderSummary">No folder loaded yet.</div></div><div><h3>Audio Files</h3><div id="trackList"></div></div><div><h3>Image Binding</h3><div class="small">Select a track, then upload an image or drag/drop one onto the track voxel. The image floats and reacts when that file plays.</div></div></div>
+<div class="panel bottomleft"><div class="footerline"><span class="badge">NO-SERVER</span><span class="badge">USD TIERS: $0/$3/$7</span><span class="badge">VALIDATOR</span><span id="validatorState">WAITING_FOLDER</span><span id="viewFooter">view=icon</span><span class="badge" id="qualityFooter">quality=auto</span><span class="badge" id="hubFooter">hub=visible</span><span class="badge" id="seedFooter">seed=F1B49B1CB10D6FED</span><span class="badge" id="depthFooter">depth=root</span><span class="badge" id="searchFooter">search=all</span><span class="badge" id="nowPlaying">now=none</span></div></div>
+<div class="dropHint" id="dropHint">Drag/drop a folder anywhere to load its audio. Drag an image directly onto a voxel to bind it to that audio file; drop an image anywhere else to bind to the selected/current track.</div>
+<div class="panel hovercard" id="hoverCard"><div class="hoverTitle" id="hoverTitle">object</div><div class="hoverGrid" id="hoverGrid"></div></div>
+
+
+
+
+<div class="albumOverlay" id="albumOverlay" role="dialog" aria-modal="true" aria-label="Album Route Builder">
+  <div class="albumShell">
+    <div class="albumHeader">
+      <div>
+        <div class="docsKicker">Voxel Audio</div>
+        <div class="docsTitle">Album Route Builder</div>
+      </div>
+      <button class="miniBtn" id="closeAlbumBtn">Close</button>
+    </div>
+    <div class="albumBody">
+      <div class="albumControls">
+        <label class="exportNameBox"><span>Album title</span><input id="albumTitleInput" type="text" placeholder="auto album title"/></label>
+        <label class="exportNameBox"><span>Route name</span><input id="albumRouteInput" type="text" placeholder="all-loaded / current-folder / search-results"/></label>
+        <div class="exportActions">
+          <button class="miniBtn" id="albumAddSelectedBtn">Add Selected</button>
+          <button class="miniBtn" id="albumAddVisibleBtn">Add Visible/Search</button>
+          <button class="miniBtn" id="albumAddFolderBtn">Add Current Folder</button>
+          <button class="miniBtn" id="albumAddAllBtn">Add All Loaded</button>
+          <button class="miniBtn" id="albumClearBtn">Clear</button>
+        </div>
+        <label class="exportNameBox"><span>Album color</span><input id="albumColorInput" type="color" value="#28e7ff"/></label>
+        <div class="exportActions">
+          <button class="miniBtn" id="albumApplyColorAllBtn">Apply Color To Album</button>
+          <button class="miniBtn" id="albumResetColorsBtn">Reset To Voxel Colors</button>
+        </div>
+        <div class="exportActions">
+          <button class="miniBtn" id="albumUseCurrentImageBtn">Use Current Image As Fallback</button>
+          <button class="miniBtn" id="albumBuildBtn">Build Full Album Kit</button>
+        </div>
+        <div class="exportReason" id="albumReason">Album route empty.</div>
+      </div>
+      <div class="albumList" id="albumList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="docsOverlay" id="docsOverlay" role="dialog" aria-modal="true" aria-label="Voxel Audio Info Docs">
+  <div class="docsShell">
+    <div class="docsHeader">
+      <div>
+        <div class="docsKicker">Voxel Audio</div>
+        <div class="docsTitle">Info / Docs / Routing</div>
+      </div>
+      <button class="miniBtn" id="closeDocsBtn">Close</button>
+    </div>
+    <div class="docsBody">
+      <nav class="docsNav" aria-label="Docs routes">
+        <button data-route="overview" class="active">Overview</button>
+        <button data-route="local">No-Server Local</button>
+        <button data-route="quickstart">Quick Start</button>
+        <button data-route="controls">Controls</button>
+        <button data-route="folder">Folder Loading</button>
+        <button data-route="search">Search</button>
+        <button data-route="binding">Image Binding</button>
+        <button data-route="preview">Live Preview</button>
+        <button data-route="record">Browser Record</button>
+        <button data-route="kit">MP4 Kit</button>
+        <button data-route="layout">Layout / Panels</button>
+        <button data-route="nothingworks">Nothing Works?</button>
+        <button data-route="troubleshoot">Troubleshooting</button>
+        <button data-route="album">Album Route Plan</button>
+        <button data-route="bindingmaps">Binding Maps</button>
+        <button data-route="watermark">Watermark Policy</button>
+        <button data-route="pro">Pro Version</button>
+        <button data-route="release">Release Notes</button>
+      </nav>
+      <section class="docsContent" id="docsContent" tabindex="0"></section>
+    </div>
+  </div>
+</div>
+
+<div class="previewPanel" id="previewPanel">
+  <div class="previewTop">
+    <div>
+      <div class="exportTitle">Live Export Preview</div>
+      <div class="small" id="previewState">select a song and bind image</div>
+    </div>
+    <div class="previewActions">
+      <button class="miniBtn" id="previewPlayBtn">Play Preview</button>
+      <button class="miniBtn" id="closePreviewBtn">Close</button>
+    </div>
+  </div>
+  <canvas id="previewCanvas" width="1280" height="720"></canvas>
+  <div class="small previewHint">This is the same 1280×720 export layout scaled live. It uses the selected voxel color, editable Song name/Artist/Feat/Description, bound image, and current audio waveform.</div>
+</div>
+
+<div class="exportPanel" id="exportPanel">
+  <div class="exportTop"><div class="exportTitle">Deterministic Render Kit</div><div class="small" id="exportState">ready</div></div>
+  <div class="small" id="exportInfo">Primary path builds a deterministic FFmpeg MP4 render kit that renders faster than realtime while preserving normal song speed. Optional browser Record Export records locally at normal 1x song speed and may fall back to WebM depending on browser support. Planned USD tiers: Free = watermarked browser Record exports, 5/week. $3 USD/month = 99 server FFmpeg exports/month. $7 USD/month = unlimited no-watermark Record + server FFmpeg exports.</div>
+  <label class="exportNameBox"><span>Song name</span><input id="exportTitleInput" type="text" placeholder="auto-filled from selected file"/></label>
+  <label class="exportNameBox"><span>Artist</span><input id="exportArtistInput" type="text" maxlength="36" placeholder="required artist name, max 36 chars"/></label>
+  <label class="exportNameBox"><span>Feat</span><input id="exportFeatInput" type="text" maxlength="36" placeholder="optional featured artist"/></label>
+  <label class="exportNameBox"><span>Description</span><input id="exportDescriptionInput" type="text" placeholder="optional description (leave blank for none)"/></label>
+  <label class="exportNameBox"><span>Export color</span><input id="singleExportColorInput" type="color" value="#28e7ff"/></label>
+  <label class="exportNameBox"><span>Admin name</span><input id="adminNameInput" type="text" placeholder="optional admin/operator name"/></label>
+  <label class="exportNameBox"><span>Admin key</span><input id="adminKeyInput" type="password" placeholder="local admin watermark unlock"/></label>
+  <div class="exportActions"><button class="miniBtn" id="adminUnlockBtn">Unlock No-Watermark</button><button class="miniBtn" id="adminLockBtn">Lock Watermark</button><span class="small" id="adminWatermarkState">watermark on</span></div>
+  <div class="exportBar"><div class="exportFill" id="exportFill"></div></div>
+  <div class="exportReason" id="exportReason">Reason: none yet.</div>
+  <pre class="exportLog" id="exportLog" aria-label="export run log"></pre>
+  <div class="exportActions"><button class="miniBtn" id="cancelExportBtn">Cancel Export</button><button class="miniBtn" id="downloadLogBtn">Download Run Log</button><button class="miniBtn" id="copyLogBtn">Copy Log</button></div>
+</div>
+
+<div class="exportHistoryPanel" id="exportHistoryPanel">
+  <div class="exportTop">
+    <div>
+      <div class="exportTitle">Session Export Vault</div>
+      <div class="small">Completed browser Record downloads</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center"><div class="small" id="exportHistoryCount">0/9</div><button class="miniBtn" id="closeVaultBtn">Close</button></div>
+  </div>
+  <div class="small">Last 9 browser Record exports from this session stay here until you close/reload the page.</div>
+  <div id="exportHistoryList" class="exportHistoryList"></div>
+</div>
+
+<div class="wavePanel"><div class="playerBar"><span class="small" id="timeRead">0:00</span><input id="seek" type="range" min="0" max="1000" value="0"/><span class="small" id="durRead">0:00</span></div><canvas id="waveCanvas"></canvas></div>
+<audio id="audio" crossorigin="anonymous"></audio>
+<script>
+(()=>{
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d'),waveCanvas=document.getElementById('waveCanvas'),wctx=waveCanvas.getContext('2d'),bootDiag=document.getElementById('bootDiag');
+const statusText=document.getElementById('statusText'),trackList=document.getElementById('trackList'),hoverCard=document.getElementById('hoverCard'),hoverTitle=document.getElementById('hoverTitle'),hoverGrid=document.getElementById('hoverGrid'),rightPanel=document.getElementById('rightPanel'),seedInput=document.getElementById('seedInput'),seedFooter=document.getElementById('seedFooter'),mainViewBtn=document.getElementById('mainViewBtn'),themeBtn=document.getElementById('themeBtn'),qualityBtn=document.getElementById('qualityBtn'),preflightBtn=document.getElementById('preflightBtn'),formatBtn=document.getElementById('formatBtn'),testExportBtn=document.getElementById('testExportBtn'),recordExportBtn=document.getElementById('recordExportBtn'),qualityFooter=document.getElementById('qualityFooter'),viewFooter=document.getElementById('viewFooter'),pathBar=document.getElementById('pathBar'),depthFooter=document.getElementById('depthFooter'),folderInput=document.getElementById('folderInput'),searchInput=document.getElementById('searchInput'),searchFooter=document.getElementById('searchFooter'),imageInput=document.getElementById('imageInput'),bindingInput=document.getElementById('bindingInput'),exportBindingsBtn=document.getElementById('exportBindingsBtn'),dockExportBindingsBtn=document.getElementById('dockExportBindingsBtn'),dockOpenBtn=document.getElementById('dockOpenBtn'),dockBindBtn=document.getElementById('dockBindBtn'),dockInfoBtn=document.getElementById('dockInfoBtn'),dockPreviewBtn=document.getElementById('dockPreviewBtn'),dockRecordBtn=document.getElementById('dockRecordBtn'),dockVaultBtn=document.getElementById('dockVaultBtn'),dockKitBtn=document.getElementById('dockKitBtn'),dockAlbumBtn=document.getElementById('dockAlbumBtn'),playBtn=document.getElementById('playBtn'),audio=document.getElementById('audio'),seek=document.getElementById('seek'),timeRead=document.getElementById('timeRead'),durRead=document.getElementById('durRead'),floatingImage=document.getElementById('floatingImage'),borderColor=document.getElementById('borderColor'),waveColor=document.getElementById('waveColor'),dropHint=document.getElementById('dropHint'),nowPlaying=document.getElementById('nowPlaying'),validatorState=document.getElementById('validatorState'),folderSummary=document.getElementById('folderSummary'),exportBtn=document.getElementById('exportBtn'),infoBtn=document.getElementById('infoBtn'),albumRouteBtn=document.getElementById('albumRouteBtn'),albumOverlay=document.getElementById('albumOverlay'),albumTitleInput=document.getElementById('albumTitleInput'),albumRouteInput=document.getElementById('albumRouteInput'),albumList=document.getElementById('albumList'),albumReason=document.getElementById('albumReason'),closeAlbumBtn=document.getElementById('closeAlbumBtn'),albumAddSelectedBtn=document.getElementById('albumAddSelectedBtn'),albumAddVisibleBtn=document.getElementById('albumAddVisibleBtn'),albumAddFolderBtn=document.getElementById('albumAddFolderBtn'),albumAddAllBtn=document.getElementById('albumAddAllBtn'),albumClearBtn=document.getElementById('albumClearBtn'),albumUseCurrentImageBtn=document.getElementById('albumUseCurrentImageBtn'),albumBuildBtn=document.getElementById('albumBuildBtn'),albumColorInput=document.getElementById('albumColorInput'),albumApplyColorAllBtn=document.getElementById('albumApplyColorAllBtn'),albumResetColorsBtn=document.getElementById('albumResetColorsBtn'),docsOverlay=document.getElementById('docsOverlay'),docsContent=document.getElementById('docsContent'),closeDocsBtn=document.getElementById('closeDocsBtn'),previewExportBtn=document.getElementById('previewExportBtn'),previewPanel=document.getElementById('previewPanel'),previewCanvas=document.getElementById('previewCanvas'),previewState=document.getElementById('previewState'),previewPlayBtn=document.getElementById('previewPlayBtn'),closePreviewBtn=document.getElementById('closePreviewBtn'),exportPanel=document.getElementById('exportPanel'),exportState=document.getElementById('exportState'),exportInfo=document.getElementById('exportInfo'),exportTitleInput=document.getElementById('exportTitleInput'),exportArtistInput=document.getElementById('exportArtistInput'),exportFeatInput=document.getElementById('exportFeatInput'),exportDescriptionInput=document.getElementById('exportDescriptionInput'),singleExportColorInput=document.getElementById('singleExportColorInput'),adminNameInput=document.getElementById('adminNameInput'),adminKeyInput=document.getElementById('adminKeyInput'),adminUnlockBtn=document.getElementById('adminUnlockBtn'),adminLockBtn=document.getElementById('adminLockBtn'),adminWatermarkState=document.getElementById('adminWatermarkState'),exportFill=document.getElementById('exportFill'),exportReason=document.getElementById('exportReason'),exportLog=document.getElementById('exportLog'),exportHistoryPanel=document.getElementById('exportHistoryPanel'),exportHistoryList=document.getElementById('exportHistoryList'),exportHistoryCount=document.getElementById('exportHistoryCount'),closeVaultBtn=document.getElementById('closeVaultBtn'),cancelExportBtn=document.getElementById('cancelExportBtn'),downloadLogBtn=document.getElementById('downloadLogBtn'),copyLogBtn=document.getElementById('copyLogBtn');
+const QUALITY={eco:{fps:30,dpr:1,maxIcon:360,maxWeb:140,maxLinks:130,bars:48,waveStep:8,grid:48,shadow:false},auto:{fps:45,dpr:1.35,maxIcon:760,maxWeb:220,maxLinks:220,bars:64,waveStep:5,grid:32,shadow:true},high:{fps:60,dpr:1.75,maxIcon:1600,maxWeb:420,maxLinks:520,bars:96,waveStep:3,grid:24,shadow:true}};let qualityMode='auto',Q=QUALITY.auto;let w=0,h=0,dpr=1,waveW=0,waveH=0,lastFrame=0,lastDomUpdate=0,lastCssUpdate=0,lastHoverMove=0,tracks=[],objects=[],objectMap=new Map(),sections=[],webNodes=[],webLinks=[],registryLabels=[],CATEGORY_COLORS={},visibleCache=[],visibleSectionCache=[],visibleIdSet=new Set(),folderVisibleCounts=new Map(),seedHex='F1B49B1CB10D6FED',mainView='icon',theme='dark',hubVisible=true,focusedFolder=null,focusedObjectId=null,hovered=null,zoom=1,panX=0,panY=0,dragging=false,lastX=0,lastY=0,tNow=0,currentTrack=null,currentUrl=null,searchQuery='';
+let audioContext,analyser,source,freqData,timeData,beat=0,beatHold=0,lastEnergy=0,energy=0,bass=0,mid=0,treble=0,waveHex='#28e7ff',borderHex='#bc7cff';
+let exporting=false,exportCancel=false,exportRecorder=null,exportChunks=[],exportCanvas=null,exportCtx=null,exportRaf=0,exportStartWall=0,exportAudioDestination=null,exportMime='video/webm',exportLogLines=[],lastExportBlobUrl=null,exportFormatPreference='auto',exportMaxSeconds=null,kitSpeedPreset='fast',sessionExportHistory=[],adminWatermarkUnlocked=false,singleExportColorOverride='',singleExportColorManual=false,previewActive=false,previewImage=null,previewCtx=null,previewRaf=0,exportWaveSmooth=null,exportBarSmooth=null,exportLastSmoothTrack=null,albumRouteIds=[],albumFallbackImageTrackId=null,albumColorOverrides=new Map();
+const TAU=Math.PI*2,AUDIO_EXT=/\.(mp3|wav|ogg|m4a|aac|flac|opus|webm)$/i;
+if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r,w/2,h/2);this.moveTo(x+r,y);this.lineTo(x+w-r,y);this.quadraticCurveTo(x+w,y,x+w,y+r);this.lineTo(x+w,y+h-r);this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);this.lineTo(x+r,y+h);this.quadraticCurveTo(x,y+h,x,y+h-r);this.lineTo(x,y+r);this.quadraticCurveTo(x,y,x+r,y);return this}}
+
+function showBootDiag(msg,hold=false){
+  if(!bootDiag)return;
+  bootDiag.textContent=msg;
+  bootDiag.classList.add('active');
+  if(!hold)setTimeout(()=>bootDiag&&bootDiag.classList.remove('active'),5200);
+}
+window.addEventListener('error',e=>showBootDiag('Runtime error: '+(e.message||e.error||'unknown'),true));window.addEventListener('unhandledrejection',e=>showBootDiag('Promise error: '+(e.reason&&e.reason.message||e.reason||'unknown'),true));
+function runStartupSelfTest(){
+  const checks=[
+    ['folderInput',!!folderInput],
+    ['imageInput',!!imageInput],
+    ['dockInfoBtn',!!dockInfoBtn],
+    ['docsOverlay',!!docsOverlay],
+    ['dockPreviewBtn',!!dockPreviewBtn],
+    ['dockAlbumBtn',!!dockAlbumBtn],
+    ['dockRecordBtn',!!dockRecordBtn],
+    ['dockKitBtn',!!dockKitBtn],
+    ['File API',!!window.File&&!!window.FileReader],
+    ['Web Audio',!!(window.AudioContext||window.webkitAudioContext)],
+    ['Canvas',!!canvas&&!!ctx]
+  ];
+  const failed=checks.filter(x=>!x[1]);
+  if(failed.length){
+    showBootDiag('Voxel Audio startup issue:\n'+failed.map(x=>'✗ '+x[0]).join('\n'),true);
+    try{validatorState.textContent='STARTUP_ISSUE'}catch(e){}
+  }else{
+    showBootDiag('Voxel Audio ready: no-server local mode active. Use ＋ Folder or Open Audio Folder.',false);
+  }
+}
+function safeClickInput(input,label){
+  try{
+    if(!input){showBootDiag(label+' input missing.',true);return}
+    input.click();
+  }catch(err){
+    showBootDiag(label+' could not open: '+String(err.message||err),true);
+  }
+}
+
+function exportBindingMap(){
+  try{
+    const bound=objects.filter(o=>o.file&&(o.imageFile||o.image||o.importedBinding)).map(o=>({
+      id:o.id,path:o.path,name:o.name,folder:o.folder,color:o.color,
+      imageFileName:o.imageFile?o.imageFile.name:(o.importedBinding&&o.importedBinding.imageFileName)||null,
+      imageBound:!!(o.imageFile||o.image)
+    }));
+    downloadBlob(new Blob([JSON.stringify({app:'Voxel Audio',version:'1.5.1',createdAt:new Date().toISOString(),bindings:bound},null,2)],{type:'application/json'}),'voxel_audio_binding_map.json');
+    showBootDiag('Exported binding map for '+bound.length+' track(s).');
+  }catch(err){showBootDiag('Export bindings failed: '+String(err.message||err),true)}
+}
+async function importBindingMapFile(file){
+  if(!file)return;
+  try{
+    const data=JSON.parse(await file.text());
+    const rows=data.bindings||[];
+    let matched=0;
+    rows.forEach(row=>{
+      const tr=objects.find(o=>o.path===row.path||o.name===row.name);
+      if(tr){tr.importedBinding=row;if(row.color)tr.color=row.color;matched++}
+    });
+    refreshVisible();renderLists();fitView();
+    showBootDiag('Imported binding metadata for '+matched+' track(s). Rebind image files if needed.');
+  }catch(err){showBootDiag('Import bindings failed: '+String(err.message||err),true)}
+}
+function setQuality(mode){qualityMode=mode;Q=QUALITY[mode]||QUALITY.auto;document.body.classList.toggle('perf-eco',mode==='eco');qualityBtn.textContent='Quality: '+mode[0].toUpperCase()+mode.slice(1);qualityFooter.textContent='quality='+mode;resize();refreshVisible&&refreshVisible()}function resize(){dpr=Math.min(devicePixelRatio||1,Q.dpr);w=innerWidth;h=innerHeight;canvas.width=Math.max(1,Math.floor(w*dpr));canvas.height=Math.max(1,Math.floor(h*dpr));canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(dpr,0,0,dpr,0,0);const r=waveCanvas.getBoundingClientRect();waveW=r.width;waveH=r.height;waveCanvas.width=Math.max(1,Math.floor(waveW*dpr));waveCanvas.height=Math.max(1,Math.floor(waveH*dpr));wctx.setTransform(dpr,0,0,dpr,0,0)}function installAutoQuality(){const hc=navigator.hardwareConcurrency||4,mem=navigator.deviceMemory||4,small=Math.min(innerWidth,innerHeight)<760;setQuality((hc<=4||mem<=4||small)?'eco':'auto')}addEventListener('resize',()=>{resize();fitView&&fitView()},{passive:true});
+function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}function hashString(str){let h=2166136261>>>0;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}function hslToHex(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1))),toHex=x=>Math.round(255*x).toString(16).padStart(2,'0');return`#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`}function seededColor(name,seed){return hslToHex(hashString(name+seed)%360,88,64)}function hexToRgb(hex){const s=hex.replace('#','');return{r:parseInt(s.slice(0,2),16),g:parseInt(s.slice(2,4),16),b:parseInt(s.slice(4,6),16)}}function rgba(hex,a){const{r,g,b}=hexToRgb(hex);return`rgba(${r},${g},${b},${a})`}function randomHexSeed(){const chars='0123456789ABCDEF';let o='';for(let i=0;i<16;i++)o+=chars[Math.floor(Math.random()*chars.length)];return o}function fmt(s){if(!isFinite(s))return'0:00';const m=Math.floor(s/60),ss=String(Math.floor(s%60)).padStart(2,'0');return`${m}:${ss}`}function folderOf(path){const bits=(path||'root').split('/');bits.pop();return bits.join('/')||'root'}function labelOf(path){return(path||'audio').split('/').pop()}
+function normSearch(v){return String(v||'').toLowerCase().trim()}function searchHay(o){return(o._hay||(o._hay=[o.name,o.path,o.folder,o.group,o.kind,(o.name||'').split('.').pop()].join(' ').toLowerCase()))}function objectMatchesSearch(o){const q=normSearch(searchQuery);if(!q)return true;const hay=searchHay(o);return q.split(/\s+/).every(part=>hay.includes(part))}function refreshVisible(){visibleCache=[];visibleIdSet.clear();folderVisibleCounts.clear();for(const o of objects){if(focusedFolder&&o.folder!==focusedFolder)continue;if(!objectMatchesSearch(o))continue;visibleCache.push(o);visibleIdSet.add(o.id);folderVisibleCounts.set(o.folder,(folderVisibleCounts.get(o.folder)||0)+1)}const names=new Set(visibleCache.map(o=>o.folder));visibleSectionCache=sections.filter(s=>names.has(s.name));searchFooter.textContent='search='+(normSearch(searchQuery)||'all')+' ('+visibleCache.length+')'}function visibleObjects(){return visibleCache}function visibleSections(){return visibleSectionCache}function validSearchCount(){return visibleCache.length}function truncatedVisible(){return visibleCache.length>Q.maxIcon?visibleCache.slice(0,Q.maxIcon):visibleCache}function truncText(text,max){text=String(text||'');if(text.length<=max)return text;return text.slice(0,Math.max(1,max-1))+'…'}function rectsOverlap(a,b){return !(a.x+a.w<b.x||b.x+b.w<a.x||a.y+a.h<b.y||b.y+b.h<a.y)}function drawLabelBox(text,x,y,maxW,color,occupied){const pad=5,lineH=16;ctx.font='11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';const maxChars=Math.max(6,Math.floor(maxW/6.5));const label=truncText(text,maxChars);const tw=Math.min(maxW,ctx.measureText(label).width);let rect={x:x,y:y,w:tw+pad*2,h:lineH};const tries=[[0,0],[0,18],[0,-18],[18,0],[-18,0],[18,18],[-18,18],[18,-18],[-18,-18],[0,36],[0,-36]];for(const [dx,dy] of tries){const r={x:x+dx,y:y+dy,w:rect.w,h:rect.h};if(r.x<4||r.y<4||r.x+r.w>w-4||r.y+r.h>h-4)continue;if(!occupied.some(o=>rectsOverlap(o,r))){rect=r;break}}if(occupied.some(o=>rectsOverlap(o,rect)))return;occupied.push(rect);ctx.fillStyle=theme==='light'?'rgba(242,236,224,.92)':'rgba(5,8,20,.82)';ctx.strokeStyle=rgba(color,.42);ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(rect.x,rect.y,rect.w,rect.h,6);ctx.fill();ctx.stroke();ctx.fillStyle=theme==='light'?'#352f28':'#fff4d5';ctx.fillText(label,rect.x+pad,rect.y+11)}
+function ensureDefaultTracks(){if(tracks.length)return;tracks=[{id:'demo_waiting_for_folder',name:'Open a folder to replace this demo voxel',path:'root/demo_waiting_for_folder',folder:'root',file:null,url:null,kind:'demo',image:null,imageFile:null,color:'#bc7cff',load:.4,links:1,receipts:0,pulse:0,group:'runtime'}]}
+function rebuild(){const rand=mulberry32(parseInt(seedHex.slice(0,8),16)||1);ensureDefaultTracks();const folders=[...new Set(tracks.map(t=>t.folder))];CATEGORY_COLORS=Object.fromEntries(folders.map(f=>[f,seededColor(f,seedHex)]));objects=[];objectMap.clear();sections=[];webNodes=[];webLinks=[];registryLabels=['audio','images','bindings','runtime','folders','waveform','playback'].map((name,i)=>({name,x:330,y:-150+i*50}));
+ const cols=Math.max(1,Math.ceil(Math.sqrt(folders.length))),spacing=40,gap=92;let global=0;folders.forEach((folder,fi)=>{const fTracks=tracks.filter(t=>t.folder===folder),tileCols=Math.max(3,Math.ceil(Math.sqrt(fTracks.length))),tileRows=Math.max(2,Math.ceil(fTracks.length/tileCols)),sectionW=(tileCols-1)*spacing+70,sectionH=(tileRows-1)*spacing+70,cg=fi%cols,rg=Math.floor(fi/cols),ox=(cg-(cols-1)/2)*(sectionW+gap),oy=(rg-Math.floor((folders.length-1)/cols)/2)*(sectionH+gap);sections.push({name:folder,x:ox-sectionW/2,y:oy-sectionH/2,w:sectionW,h:sectionH,color:CATEGORY_COLORS[folder],count:fTracks.length});fTracks.forEach((tr,i)=>{const c=i%tileCols,r=Math.floor(i/tileCols),x=ox-sectionW/2+35+c*spacing,y=oy-sectionH/2+42+r*spacing;Object.assign(tr,{x,y,size:16+Math.min(10,(tr.name.length%7)),load:tr.load??(.1+rand()*.9),links:tr.links??(1+Math.floor(rand()*12)),receipts:tr.receipts??Math.floor(rand()*6),pulse:tr.pulse??rand()*TAU,group:tr.group||registryLabels[Math.floor(rand()*registryLabels.length)].name,color:CATEGORY_COLORS[folder],_hay:null});objects.push(tr);objectMap.set(tr.id,tr);global++})});
+ objects.slice(0,Q.maxWeb).forEach((obj,i)=>{const a=i/Math.max(Math.min(objects.length,Q.maxWeb),1)*TAU+rand()*.25,rr=80+rand()*145;webNodes.push({x:Math.cos(a)*rr*.75,y:(rand()*2-1)*130,z:Math.sin(a)*rr*.55+(rand()*2-1)*40,id:'node_'+obj.id,objectId:obj.id,folder:obj.folder,load:obj.load,links:obj.links,receipts:obj.receipts,pulse:rand()*TAU,group:obj.group})});for(let i=0;i<Math.min(Q.maxLinks,webNodes.length*2);i++){let a=Math.floor(rand()*webNodes.length),b=Math.floor(rand()*webNodes.length);if(a===b)b=(b+1)%webNodes.length;webLinks.push({a,b,w:.2+rand()*.8})}seedInput.value=seedHex;seedFooter.textContent='seed='+seedHex;refreshVisible();renderLists();updatePathBar();fitView();setTimeout(()=>fitView(),60);updateStatus&&updateStatus(true)}
+function renderLists(){trackList.textContent='';const visible=visibleCache.length,totalFolders=new Set(tracks.map(t=>t.folder)).size,visibleFolders=new Set(visibleCache.map(t=>t.folder)).size;folderSummary.textContent=tracks[0]?.kind==='demo'?'No folder loaded yet. Use Open Audio Folder.':`${visible}/${tracks.length} playable audio file(s) visible across ${visibleFolders}/${totalFolders} folder(s). Renderer cap: ${Q.maxIcon} voxels / ${Q.fps}fps.`;const frag=document.createDocumentFragment();visibleCache.slice(0,100).forEach(obj=>{const row=document.createElement('div');row.className='trackRow';row.innerHTML=`<div class="swatch" style="background:${obj.color}"></div><div class="trackName small" title="${String(obj.path).replace(/"/g,'&quot;')}">${obj.name}</div><button class="miniBtn">play</button><button class="miniBtn">bind</button>`;const b=row.querySelectorAll('button');b[0].onclick=()=>playTrack(obj.id);b[1].onclick=()=>{focusedObjectId=obj.id;imageInput.click()};row.ondragover=e=>{e.preventDefault();row.style.background='rgba(255,255,255,.08)'};row.ondragleave=()=>row.style.background='';row.ondrop=e=>{e.preventDefault();row.style.background='';bindDroppedImage(e,obj.id)};frag.appendChild(row)});trackList.appendChild(frag)}
+function updatePathBar(){pathBar.innerHTML='';const parts=['root'];if(focusedFolder)parts.push(focusedFolder);if(focusedObjectId){const o=objectById(focusedObjectId);if(o&&!focusedFolder)parts.push(o.folder);parts.push(labelOf(o?.path||focusedObjectId))}parts.forEach(p=>{const el=document.createElement('div');el.className='pathchip';el.textContent=p;pathBar.appendChild(el)});depthFooter.textContent='depth='+(focusedObjectId?'audio':focusedFolder?'folder':'root')}
+function objectById(id){return objectMap.get(id)||null}
+function hardStopAudio(){
+  try{audio.pause();audio.removeAttribute('src');audio.load()}catch(e){}
+  try{if(currentUrl)URL.revokeObjectURL(currentUrl)}catch(e){}
+  currentUrl=null;
+}
+function clearRuntimePanelsForStartup(){
+  try{previewActive=false;previewPanel&&previewPanel.classList.remove('active')}catch(e){}
+  try{exportPanel&&exportPanel.classList.remove('active')}catch(e){}
+  try{albumOverlay&&albumOverlay.classList.remove('active')}catch(e){}
+  try{docsOverlay&&docsOverlay.classList.remove('active')}catch(e){}
+  try{exportHistoryPanel&&exportHistoryPanel.classList.remove('active')}catch(e){}
+  try{hoverCard&&(hoverCard.style.display='none')}catch(e){}
+  try{floatingImage&&(floatingImage.style.display='none')}catch(e){}
+}
+function resetToStartupState(){
+  hardStopAudio();
+  clearRuntimePanelsForStartup();
+
+  objects=[];
+  visibleObjects=[];
+  visibleCache=[];
+  visibleSectionCache=[];
+  folderVisibleCounts=new Map();
+  folders=[];
+  sections=[];
+  currentTrack=null;
+  focusedObjectId=null;
+  focusedFolder=null;
+  hovered=null;
+  searchQuery='';
+  mainView='icon';
+  panX=0;
+  panY=0;
+  zoom=1;
+  targetZoom=1;
+  sessionExportHistory=[];
+  albumRouteIds=[];
+  albumFallbackImageTrackId=null;
+  try{albumColorOverrides&&albumColorOverrides.clear()}catch(e){}
+  singleExportColorManual=false;
+  singleExportColorOverride='';
+  exportLogLines=[];
+  exporting=false;
+  exportMaxSeconds=null;
+
+  if(searchInput)searchInput.value='';
+  if(exportTitleInput)exportTitleInput.value='';
+  if(exportArtistInput)exportArtistInput.value='';
+  if(exportFeatInput)exportFeatInput.value='';
+  if(exportDescriptionInput)exportDescriptionInput.value='';
+  if(singleExportColorInput)singleExportColorInput.value=waveHex||'#28e7ff';
+  if(folderInput)folderInput.value='';
+  if(imageInput)imageInput.value='';
+  if(bindingInput)bindingInput.value='';
+
+  document.documentElement.style.setProperty('--waveRgb',waveHex||'#28e7ff');
+  document.documentElement.style.setProperty('--borderRgb',borderHex||'#8c5cff');
+
+  playBtn.textContent='Play';
+  validatorState.textContent='WAITING_FOLDER';
+  nowPlaying.textContent='now=none';
+  searchFooter.textContent='search=all';
+  depthFooter.textContent='depth=root';
+  visibleFooter.textContent='visible=0';
+  renderedFooter.textContent='rendered=0';
+  foldersFooter.textContent='folders=0';
+  currentFooter.textContent='current=none';
+  selectedFooter.textContent='selected=none';
+  hoveredFooter.textContent='hovered=none';
+  imageBoundFooter.textContent='imageBound=no';
+  if(audioTime)audioTime.textContent='0:00';
+  if(audioDur)audioDur.textContent='0:00';
+  if(progress)progress.value=0;
+  if(exportHistoryCount)exportHistoryCount.textContent='0/9';
+  if(exportHistoryList)exportHistoryList.innerHTML='<div class="small">No completed browser Record exports yet. Run 10s Record or Record Full after selecting a song and binding an image.</div>';
+
+  rebuild();
+  resize();
+  showBootDiag('Reset complete: startup state restored. Load a folder to begin.');
+}
+function backOutOfZoomOrFocus(){
+  // Back does NOT wipe loaded audio. It only steps out of current focus/search/zoom.
+  if(previewPanel&&previewPanel.classList.contains('active')){closeExportPreview();showBootDiag('Back: closed export preview.');return}
+  if(albumOverlay&&albumOverlay.classList.contains('active')){closeAlbumRoute();showBootDiag('Back: closed album route.');return}
+  if(docsOverlay&&docsOverlay.classList.contains('active')){closeDocs();showBootDiag('Back: closed info docs.');return}
+  if(exportPanel&&exportPanel.classList.contains('active')){exportPanel.classList.remove('active');showBootDiag('Back: closed export panel.');return}
+  if(exportHistoryPanel&&exportHistoryPanel.classList.contains('active')){closeSessionExportVault();showBootDiag('Back: closed vault.');return}
+
+  if(focusedFolder){
+    focusedFolder=null;
+    depthFooter.textContent='depth=root';
+    refreshVisible();
+    fitView();
+    showBootDiag('Back: returned to root folder view.');
+    return;
+  }
+  if(searchQuery){
+    searchQuery='';
+    if(searchInput)searchInput.value='';
+    refreshVisible();
+    fitView();
+    showBootDiag('Back: cleared search filter.');
+    return;
+  }
+  if(focusedObjectId||currentTrack){
+    focusedObjectId=null;
+    currentTrack=null;
+    selectedFooter.textContent='selected=none';
+    currentFooter.textContent='current=none';
+    updateFloatingImage();
+    renderLists();
+    showBootDiag('Back: cleared selected voxel focus.');
+    return;
+  }
+
+  // Final fallback: zoom out/recenter without clearing library.
+  panX=0;
+  panY=0;
+  fitView();
+  showBootDiag('Back: zoomed/recentered to loaded directory root.');
+}
+
+function fitView(){
+  if(mainView!=='icon')return;
+  const visible=visibleCache&&visibleCache.length?visibleCache:objects;
+  if(!visible.length){zoom=Math.min(w/1300,h/780)*.95;panX=0;panY=0;return}
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(const o of visible){
+    const pad=70;
+    minX=Math.min(minX,o.x-pad);maxX=Math.max(maxX,o.x+pad);
+    minY=Math.min(minY,o.y-pad);maxY=Math.max(maxY,o.y+pad);
+  }
+  for(const s of visibleSectionCache||[]){
+    minX=Math.min(minX,s.x-30);maxX=Math.max(maxX,s.x+s.w+30);
+    minY=Math.min(minY,s.y-30);maxY=Math.max(maxY,s.y+s.h+30);
+  }
+  const sceneW=Math.max(220,maxX-minX),sceneH=Math.max(180,maxY-minY);
+  const sidePad=(w>=1200)?430:36;
+  const topPad=112,bottomPad=210;
+  const availW=Math.max(260,w-sidePad*2);
+  const availH=Math.max(180,h-topPad-bottomPad);
+  zoom=Math.max(.18,Math.min(2.2,Math.min(availW/sceneW,availH/sceneH)*.92));
+  const centerX=(minX+maxX)/2,centerY=(minY+maxY)/2;
+  const targetScreenX=w/2;
+  const targetScreenY=topPad+availH/2;
+  panX=(targetScreenX-w/2)/zoom-centerX;
+  panY=(targetScreenY-h/2)/zoom-centerY;
+}function worldToScreen(x,y){return{x:w/2+(x+panX)*zoom,y:h/2+(y+panY)*zoom}}function screenToWorld(x,y){return{x:(x-w/2)/zoom-panX,y:(y-h/2)/zoom-panY}}
+function ensureAudioGraph(){if(audioContext)return;audioContext=new(window.AudioContext||window.webkitAudioContext)();analyser=audioContext.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=.78;source=audioContext.createMediaElementSource(audio);source.connect(analyser);analyser.connect(audioContext.destination);freqData=new Uint8Array(analyser.frequencyBinCount);timeData=new Uint8Array(analyser.fftSize)}
+async function playTrack(id){const tr=objectById(id);if(!tr||!tr.file){focusedObjectId=id;currentTrack=tr;setAccentFromTrack(tr);syncExportAccentFromTrack(tr);updateFloatingImage();renderLists();updatePathBar();return}ensureAudioGraph();if(audioContext.state==='suspended')await audioContext.resume();if(currentUrl)URL.revokeObjectURL(currentUrl);currentUrl=URL.createObjectURL(tr.file);audio.src=currentUrl;await audio.play();currentTrack=tr;focusedObjectId=id;focusedFolder=tr.folder;setAccentFromTrack(tr);syncExportAccentFromTrack(tr);refreshVisible();playBtn.textContent='Pause';validatorState.textContent='PLAYING';nowPlaying.textContent='now='+tr.name;updateFloatingImage();renderLists();updatePathBar()}
+function updateFloatingImage(){if(currentTrack&&currentTrack.image){floatingImage.src=currentTrack.image;floatingImage.style.display='block'}else{floatingImage.style.display='none'}}
+function bindImageFile(file,id){if(!file||!file.type.startsWith('image/'))return;const target=objectById(id)||currentTrack||objectById(focusedObjectId);if(!target)return;target.image=URL.createObjectURL(file);target.imageFile=file;focusedObjectId=target.id;currentTrack=currentTrack&&currentTrack.id===target.id?target:currentTrack;validatorState.textContent='IMAGE_BOUND';if(currentTrack&&currentTrack.id===target.id)updateFloatingImage();markImageRequirementSatisfied(target);if(previewActive&&currentTrack&&currentTrack.id===target.id){loadImageElement(target.image).then(img=>previewImage=img)}renderLists();updatePathBar()}
+function bindDroppedImage(e,id){const file=[...(e.dataTransfer.files||[])].find(f=>f.type.startsWith('image/'));bindImageFile(file,id)}
+function loadAudioFilesFromList(fileList,sourceLabel='folder'){const incoming=[...fileList];showBootDiag('Scanning '+incoming.length+' dropped/selected file(s)...');const files=incoming.filter(f=>AUDIO_EXT.test(f.name)||f.type.startsWith('audio/'));tracks=files.map((file,i)=>{const path=file._dropPath||file.webkitRelativePath||file.name;return{id:'audio_'+i+'_'+hashString(path),name:file.name,path,folder:folderOf(path),file,url:null,kind:'audio',image:null,imageFile:null,load:(file.size%1000000)/1000000,links:Math.max(1,Math.round(file.size/500000)),receipts:0,pulse:(file.size%628)/100,group:'audio'}});if(!tracks.length)tracks=[];focusedFolder=null;focusedObjectId=null;currentTrack=null;hovered=null;if(currentUrl){URL.revokeObjectURL(currentUrl);currentUrl=null}audio.removeAttribute('src');audio.load();playBtn.textContent='Play';validatorState.textContent=tracks.length?(sourceLabel==='drop'?'FOLDER_DROPPED_LOADED':'FOLDER_LOADED'):'NO_AUDIO_FOUND';showBootDiag(tracks.length?('Loaded '+tracks.length+' playable audio file(s).'):('No playable audio files found. Try WAV/MP3/FLAC/OGG/M4A/AAC/OPUS/WEBM.'));nowPlaying.textContent='now=none';rebuild()}
+folderInput.onchange=()=>loadAudioFilesFromList(folderInput.files,'picker');
+function entryToFiles(entry,prefix=''){return new Promise(resolve=>{if(!entry)return resolve([]);if(entry.isFile){entry.file(file=>{try{file._dropPath=(prefix?prefix+'/':'')+file.name}catch(_){}resolve([file])},()=>resolve([]));return}if(entry.isDirectory){const reader=entry.createReader(),out=[];const readBatch=()=>reader.readEntries(async entries=>{if(!entries.length){resolve(out);return}const nested=await Promise.all(entries.map(child=>entryToFiles(child,(prefix?prefix+'/':'')+entry.name)));nested.flat().forEach(f=>out.push(f));readBatch()},()=>resolve(out));readBatch();return}resolve([])})}
+function getDropEntries(e){return [...(e.dataTransfer?.items||[])].map(item=>item.webkitGetAsEntry?item.webkitGetAsEntry():null).filter(Boolean)}
+function dropHasDirectory(e){return getDropEntries(e).some(entry=>entry.isDirectory)}
+async function loadDroppedFolder(e){const entries=getDropEntries(e).filter(entry=>entry.isDirectory);if(!entries.length)return false;dropHint.classList.remove('hot');validatorState.textContent='SCANNING_DROPPED_FOLDER';const nested=await Promise.all(entries.map(entry=>entryToFiles(entry,'')));const files=nested.flat();loadAudioFilesFromList(files,'drop');return true}
+
+imageInput.onchange=()=>bindImageFile(imageInput.files&&imageInput.files[0],focusedObjectId||currentTrack?.id);
+playBtn.onclick=async()=>{if(!audio.src&&focusedObjectId)return playTrack(focusedObjectId);if(!audio.src&&visibleCache[0])return playTrack(visibleCache[0].id);ensureAudioGraph();if(audioContext.state==='suspended')await audioContext.resume();if(audio.paused){await audio.play();playBtn.textContent='Pause';validatorState.textContent='PLAYING'}else{audio.pause();playBtn.textContent='Play';validatorState.textContent='PAUSED'}};audio.onended=()=>{playBtn.textContent='Play';validatorState.textContent='ENDED'};seek.oninput=()=>{if(audio.duration)audio.currentTime=Number(seek.value)/1000*audio.duration};
+borderColor.oninput=()=>{borderHex=borderColor.value;document.documentElement.style.setProperty('--borderRgb',borderHex)};waveColor.oninput=()=>{waveHex=waveColor.value;document.documentElement.style.setProperty('--waveRgb',waveHex)};
+canvas.addEventListener('wheel',e=>{e.preventDefault();if(mainView!=='icon')return;const before=screenToWorld(e.clientX,e.clientY),factor=e.deltaY<0?1.12:.89;zoom=Math.max(.25,Math.min(6,zoom*factor));const after=screenToWorld(e.clientX,e.clientY);panX+=after.x-before.x;panY+=after.y-before.y},{passive:false});canvas.onmousedown=e=>{dragging=true;lastX=e.clientX;lastY=e.clientY};addEventListener('mouseup',()=>dragging=false);addEventListener('mousemove',e=>{if(dragging&&mainView==='icon'){panX+=(e.clientX-lastX)/zoom;panY+=(e.clientY-lastY)/zoom;lastX=e.clientX;lastY=e.clientY}if(tNow-lastHoverMove<33)return;lastHoverMove=tNow;hovered=mainView==='icon'?pickIcon(e.clientX,e.clientY):pickWeb(e.clientX,e.clientY);if(hovered&&!document.body.classList.contains('hub-clean')){hoverCard.style.display='block';hoverCard.style.left=Math.min(w-300,e.clientX+16)+'px';hoverCard.style.top=Math.min(h-190,e.clientY+16)+'px';hoverTitle.textContent=hovered.name||hovered.label||hovered.id;hoverGrid.innerHTML=`<div>folder</div><div>${hovered.folder}</div><div>file</div><div>${hovered.name||hovered.id}</div><div>image</div><div>${hovered.image?'bound':'none'}</div><div>size</div><div>${hovered.file?Math.round(hovered.file.size/1024)+' KB':'demo'}</div><div>click</div><div>play audio</div>`}else hoverCard.style.display='none'});
+canvas.onclick=e=>{const p=mainView==='icon'?pickIcon(e.clientX,e.clientY):pickWeb(e.clientX,e.clientY);if(p)playTrack(p.objectId||p.id)};canvas.ondragover=e=>{e.preventDefault();dropHint.classList.add('hot')};canvas.ondragleave=()=>dropHint.classList.remove('hot');canvas.ondrop=async e=>{e.preventDefault();dropHint.classList.remove('hot');if(await loadDroppedFolder(e))return;const p=mainView==='icon'?pickIcon(e.clientX,e.clientY):pickWeb(e.clientX,e.clientY);bindDroppedImage(e,p?.objectId||p?.id||focusedObjectId||currentTrack?.id)};
+function pickIcon(sx,sy){let best=null,bestD=1e9;for(const o of truncatedVisible()){const p=worldToScreen(o.x,o.y),d=Math.hypot(p.x-sx,p.y-sy),r=Math.max(13,o.size*zoom*1.1);if(d<r&&d<bestD){best=o;bestD=d}}return best}let webHoverPoints=[];function project3(p,t){const yaw=t*.00015,pitch=-.28;let x=p.x,y=p.y,z=p.z,cx=Math.cos(yaw),sx=Math.sin(yaw),x1=x*cx-z*sx,z1=x*sx+z*cx,cy=Math.cos(pitch),sy=Math.sin(pitch),y2=y*cy-z1*sy,z2=y*sy+z1*cy,cam=560,s=cam/(cam+z2+260);return{x:w*.44+x1*s,y:h*.53+y2*s,s,z:z2}}function pickWeb(mx,my){let best=null,bestD=1e9;for(const p of webHoverPoints){const d=Math.hypot(mx-p.x,my-p.y);if(d<p.r&&d<bestD){best=objectById(p.objectId);bestD=d}}return best}
+function drawBg(){if(theme==='light'){ctx.fillStyle='#e7e0d3';ctx.fillRect(0,0,w,h);return}ctx.fillStyle='#030611';ctx.fillRect(0,0,w,h);const g=ctx.createRadialGradient(w*.5,h*.46,30,w*.5,h*.46,Math.max(w,h)*.58);g.addColorStop(0,'rgba(66,35,120,0.075)');g.addColorStop(.34,'rgba(30,12,58,0.10)');g.addColorStop(1,'rgba(2,3,8,0)');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);ctx.strokeStyle='rgba(117,77,200,0.045)';for(let x=0;x<w;x+=Q.grid){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}for(let y=0;y<h;y+=Q.grid){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}}
+function drawIconView(){drawBg();const occupiedLabels=[];const visible=truncatedVisible();for(const s of visibleSectionCache){const p=worldToScreen(s.x,s.y),ww=s.w*zoom,hh=s.h*zoom;ctx.strokeStyle=rgba(s.color,.42);ctx.lineWidth=1.2;ctx.strokeRect(p.x,p.y,ww,hh);const shown=folderVisibleCounts.get(s.name)||0;drawLabelBox(`${s.name} (${shown})`,p.x+7,p.y+7,Math.max(80,ww-14),s.color,occupiedLabels)}for(const o of visible){const p=worldToScreen(o.x,o.y),active=(hovered&&hovered.id===o.id)||(focusedObjectId===o.id)||(currentTrack&&currentTrack.id===o.id),pulse=.78+.22*Math.sin(tNow*.003+o.pulse),sz=o.size*zoom*(active?1.45:1)*pulse*(1+bass*.28),depth=Math.max(3,sz*(.24+bass*.24)),color=o.color||CATEGORY_COLORS[o.folder];ctx.beginPath();ctx.moveTo(p.x-sz/2,p.y-sz/2);ctx.lineTo(p.x+sz/2,p.y-sz/2);ctx.lineTo(p.x+sz/2+depth,p.y-sz/2-depth);ctx.lineTo(p.x-sz/2+depth,p.y-sz/2-depth);ctx.closePath();ctx.fillStyle=o.image?rgba('#ffffff',active?.95:.72):rgba(color,active?.9:.72);ctx.fill();ctx.beginPath();ctx.moveTo(p.x+sz/2,p.y-sz/2);ctx.lineTo(p.x+sz/2,p.y+sz/2);ctx.lineTo(p.x+sz/2+depth,p.y+sz/2-depth);ctx.lineTo(p.x+sz/2+depth,p.y-sz/2-depth);ctx.closePath();ctx.fillStyle='rgba(20,24,40,.68)';ctx.fill();ctx.fillStyle=rgba(color,active?1:.84);ctx.fillRect(p.x-sz/2,p.y-sz/2,sz,sz);if(o.image){ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillRect(p.x+sz*.18,p.y-sz*.42,sz*.24,sz*.24)}if(active){ctx.strokeStyle=waveHex;ctx.lineWidth=2;ctx.strokeRect(p.x-sz/2-3,p.y-sz/2-3,sz+6,sz+6);drawLabelBox(o.name,p.x-sz,p.y+sz/2+8,Math.max(96,160*zoom),color,occupiedLabels)}}if(!visibleCache.length&&normSearch(searchQuery)){ctx.fillStyle='rgba(255,244,213,.86)';ctx.font='14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';ctx.fillText('No valid audio voxels match this search.',w/2-150,h/2)}else if(visibleCache.length>Q.maxIcon){ctx.fillStyle='rgba(255,244,213,.68)';ctx.font='11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';ctx.fillText(`Showing ${Q.maxIcon}/${visibleCache.length}. Search narrower or switch quality higher.`,18,h-176)}const cx=w/2,cy=h/2;ctx.strokeStyle='rgba(240,240,255,.22)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,22+beat*16,0,TAU);ctx.stroke();ctx.beginPath();ctx.moveTo(cx-12,cy);ctx.lineTo(cx+12,cy);ctx.moveTo(cx,cy-12);ctx.lineTo(cx,cy+12);ctx.stroke()}
+function drawWebView(){drawBg();webHoverPoints=[];for(const l of webLinks){const a=webNodes[l.a],b=webNodes[l.b];if(!a||!b)continue;const ao=objectById(a.objectId),bo=objectById(b.objectId);if(!visibleIdSet.has(a.objectId)&&!visibleIdSet.has(b.objectId))continue;const pa=project3(a,tNow),pb=project3(b,tNow),color=CATEGORY_COLORS[a.folder];ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.quadraticCurveTo((pa.x+pb.x)/2,(pa.y+pb.y)/2,pb.x,pb.y);ctx.strokeStyle=rgba(color,.18+l.w*.22);ctx.lineWidth=.8+l.w*1.2;ctx.stroke()}for(const n of webNodes){if(!visibleIdSet.has(n.objectId))continue;const p=project3(n,tNow),obj=objectById(n.objectId),color=CATEGORY_COLORS[n.folder],active=currentTrack&&currentTrack.id===n.objectId,r=(3.8+Math.sin(tNow*.002+n.pulse)*2.5)*(active?2.2:1);ctx.beginPath();ctx.fillStyle=rgba(color,.98);ctx.shadowBlur=active?40:20;ctx.shadowColor=rgba(color,.95);ctx.arc(p.x,p.y,r,0,TAU);ctx.fill();ctx.shadowBlur=0;webHoverPoints.push({x:p.x,y:p.y,r:14,objectId:n.objectId})}registryLabels.forEach(g=>{const x=w*.71+g.x*.52,y=h*.49+g.y*.78;ctx.fillStyle=theme==='light'?'rgba(235,229,217,.95)':'rgba(30,26,42,.92)';ctx.strokeStyle=theme==='light'?'rgba(150,140,126,.6)':'rgba(180,170,220,.28)';const lw=100+g.name.length*4;ctx.strokeRect(x,y-10,lw,20);ctx.fillRect(x,y-10,lw,20);ctx.fillStyle=theme==='light'?'#38332d':'#ece7ff';ctx.font='12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';ctx.fillText(g.name,x+18,y+4);ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--waveRgb');ctx.fillRect(x+6,y-4,8,8)})}
+function drawWave(){const ww=waveW,hh=waveH;wctx.clearRect(0,0,ww,hh);wctx.fillStyle='rgba(0,0,0,.12)';wctx.fillRect(0,0,ww,hh);const wave=waveHex;wctx.strokeStyle=wave;wctx.lineWidth=2+energy*5;wctx.shadowBlur=18+beat*45;wctx.shadowColor=wave;wctx.beginPath();if(timeData){const step=Q.waveStep,slice=ww/(timeData.length/step);for(let i=0,j=0;i<timeData.length;i+=step,j++){const v=(timeData[i]-128)/128,x=j*slice,y=hh/2+v*(hh*.28+energy*hh*.22);if(i===0)wctx.moveTo(x,y);else wctx.lineTo(x,y)}}else{wctx.moveTo(0,hh/2);wctx.lineTo(ww,hh/2)}wctx.stroke();wctx.shadowBlur=0;if(freqData){const bars=Q.bars,bw=ww/bars;for(let i=0;i<bars;i++){const idx=Math.floor(i/bars*freqData.length*.65),val=freqData[idx]/255,bh=val*hh*.42;wctx.fillStyle=rgba(wave,.08+val*.35);wctx.fillRect(i*bw,hh-bh-8,Math.max(1,bw-2),bh)}}}
+function readAudio(){if(analyser&&!audio.paused){analyser.getByteFrequencyData(freqData);analyser.getByteTimeDomainData(timeData);const avg=(a,b)=>{let s=0,c=0;for(let i=a;i<b&&i<freqData.length;i++){s+=freqData[i];c++}return c?s/c/255:0};bass=avg(1,18);mid=avg(18,130);treble=avg(130,520);const next=Math.min(1,bass*.48+mid*.34+treble*.22);energy+=(next-energy)*.12;const spike=next-lastEnergy;if((spike>.055&&next>.22)||bass>.62)beatHold=1;lastEnergy=next}else{if(!timeData)timeData=new Uint8Array(2048).fill(128);if(!freqData)freqData=new Uint8Array(1024);energy*=.94;bass*=.92;mid*=.92;treble*=.92}beatHold*=.86;beat=Math.max(beatHold,energy*.52);if(tNow-lastCssUpdate>33){lastCssUpdate=tNow;document.documentElement.style.setProperty('--energy',energy.toFixed(3));document.documentElement.style.setProperty('--beat',beat.toFixed(3));document.documentElement.style.setProperty('--bass',bass.toFixed(3));document.documentElement.style.setProperty('--mid',mid.toFixed(3));document.documentElement.style.setProperty('--treble',treble.toFixed(3));}if(floatingImage.style.display==='block'){const x=Math.sin(tNow*.0011)*(70+bass*140),y=Math.cos(tNow*.0008)*(34+mid*80),rot=Math.sin(tNow*.0007)*18+treble*28;floatingImage.style.transform=`translate3d(calc(-50% + ${x}px),calc(-50% + ${y}px),0) rotateX(${8-bass*18}deg) rotateY(${rot}deg) rotateZ(${Math.sin(tNow*.0005)*9}deg) scale(${.86+bass*.34+beat*.12})`}}
+function updateStatus(force=false){if(!force&&tNow-lastDomUpdate<250)return;lastDomUpdate=tNow;timeRead.textContent=fmt(audio.currentTime);durRead.textContent=fmt(audio.duration);if(audio.duration&&!seek.matches(':active'))seek.value=String(Math.floor(audio.currentTime/audio.duration*1000));if(document.body.classList.contains('hub-clean'))return;statusText.textContent=`front = ${mainView}\ntheme = ${theme}\nquality = ${qualityMode} / ${Q.fps}fps / dpr ${dpr.toFixed(2)}\naudioFiles = ${tracks[0]?.kind==='demo'?0:tracks.length}\nvisible = ${visibleCache.length}\nrendered = ${Math.min(visibleCache.length,Q.maxIcon)}\nfolders = ${new Set(tracks.map(t=>t.folder)).size}\ncurrent = ${currentTrack?currentTrack.name:'none'}\nselected = ${focusedObjectId||'none'}\nsearch = ${searchQuery||'all'}\nhovered = ${hovered?(hovered.name||hovered.id):'none'}\nimageBound = ${currentTrack&&currentTrack.image?'yes':'no'}\n\nProduction pass: cached search, capped renderer, throttled DOM updates, adaptive quality, folder drop, clean hub, collision-safe labels, and low-stain background rendering.`}
+
+function cleanTrackTitle(name){return (name||'untitled').replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim()||'untitled'}
+function drawRoundedRect(g,x,y,w,h,r){
+  // Clamp radius so tiny bars with radius=999 cannot explode into giant foreground shapes.
+  w=Math.max(0,Number(w)||0);
+  h=Math.max(0,Number(h)||0);
+  r=Math.max(0,Math.min(Number(r)||0,w/2,h/2));
+  g.beginPath();
+  g.moveTo(x+r,y);
+  g.lineTo(x+w-r,y);
+  g.quadraticCurveTo(x+w,y,x+w,y+r);
+  g.lineTo(x+w,y+h-r);
+  g.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  g.lineTo(x+r,y+h);
+  g.quadraticCurveTo(x,y+h,x,y+h-r);
+  g.lineTo(x,y+r);
+  g.quadraticCurveTo(x,y,x+r,y);
+  g.closePath();
+}
+function loadImageElement(src){return new Promise(resolve=>{if(!src)return resolve(null);const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>resolve(null);im.src=src})}
+function drawCoverCrop(g,img,x,y,w,h,alpha=1,blur=0){g.save();g.globalAlpha=alpha;if(blur)g.filter=`blur(${blur}px)`;const ir=img.width/img.height,wr=w/h;let sx=0,sy=0,sw=img.width,sh=img.height;if(ir>wr){sw=img.height*wr;sx=(img.width-sw)/2}else{sh=img.width/wr;sy=(img.height-sh)/2}g.drawImage(img,sx,sy,sw,sh,x,y,w,h);g.restore()}
+function drawExportFallbackArt(g,x,y,w,h,title){const grad=g.createLinearGradient(x,y,x+w,y+h);grad.addColorStop(0,borderHex);grad.addColorStop(.55,'#11182d');grad.addColorStop(1,waveHex);g.fillStyle=grad;drawRoundedRect(g,x,y,w,h,32);g.fill();g.strokeStyle='rgba(255,255,255,.22)';g.lineWidth=3;g.stroke();g.fillStyle='rgba(255,255,255,.88)';g.font='800 54px system-ui,Segoe UI,Arial';g.textAlign='center';g.textBaseline='middle';g.fillText('VOXEL',x+w/2,y+h/2-34);g.font='700 46px system-ui,Segoe UI,Arial';g.fillText('AUDIO',x+w/2,y+h/2+28);g.font='16px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';g.fillStyle='rgba(255,255,255,.70)';g.fillText(cleanTrackTitle(title).slice(0,32),x+w/2,y+h-42)}
+function wrapText(g,text,x,y,maxW,lineH,maxLines){const words=String(text||'').split(/\s+/);let line='',lines=[];for(const word of words){const test=line?line+' '+word:word;if(g.measureText(test).width>maxW&&line){lines.push(line);line=word;if(lines.length>=maxLines)break}else line=test}if(lines.length<maxLines&&line)lines.push(line);lines.slice(0,maxLines).forEach((ln,i)=>g.fillText(ln,x,y+i*lineH));return lines.length}
+function getExportTitle(tr){
+  const auto=cleanTrackTitle((tr&&tr.name)||'Voxel Audio');
+  const typed=exportTitleInput&&exportTitleInput.value?exportTitleInput.value.trim():'';
+  return typed||auto;
+}
+function getExportDescription(){
+  return exportDescriptionInput&&exportDescriptionInput.value?exportDescriptionInput.value.trim():'';
+}
+function getExportArtist(){
+  const v=exportArtistInput&&exportArtistInput.value?exportArtistInput.value.trim():'';
+  return v.slice(0,36);
+}
+function requireArtistName(actionLabel='export'){
+  const artist=getExportArtist();
+  if(!artist){
+    exportPanel&&exportPanel.classList.add('active');
+    setExportReason(actionLabel+' blocked: artist name required.','Enter an Artist name before Preview, Record, or MP4 export. Max 36 characters. This name is locked into the export metadata when the export starts.');
+    validatorState.textContent='ARTIST_REQUIRED';
+    showBootDiag(actionLabel+' blocked: enter Artist name first, max 36 characters.',true);
+    if(exportArtistInput)exportArtistInput.focus();
+    return '';
+  }
+  return artist;
+}
+function lockArtistForExport(){
+  const artist=getExportArtist();
+  if(exportArtistInput)exportArtistInput.value=artist;
+  return artist;
+}
+function getExportFeat(){
+  return exportFeatInput&&exportFeatInput.value?exportFeatInput.value.trim():'';
+}
+function getExportCreditLine(){
+  const artist=getExportArtist();
+  const feat=getExportFeat();
+  if(artist&&feat)return artist+' feat. '+feat;
+  if(artist)return artist;
+  if(feat)return 'feat. '+feat;
+  return '';
+}
+function prepareExportTitle(tr,force=false){
+  if(!exportTitleInput)return;
+  const auto=cleanTrackTitle((tr&&tr.name)||'Voxel Audio');
+  if(force||!exportTitleInput.value.trim()) exportTitleInput.value=auto;
+}
+function getTrackExportColor(tr){
+  if(singleExportColorManual && singleExportColorOverride) return singleExportColorOverride;
+  return (tr&&tr.color) || singleExportColorOverride || waveHex || '#28e7ff';
+}
+function setSingleExportColor(color,manual=false){
+  if(!color)return;
+  singleExportColorOverride=color;
+  singleExportColorManual=!!manual;
+  if(singleExportColorInput)singleExportColorInput.value=color;
+  document.documentElement.style.setProperty('--waveRgb',color);
+  document.documentElement.style.setProperty('--borderRgb',color);
+  if(manual){
+    showBootDiag('Manual export color override set to '+color+'. Select another voxel to reset to that voxel color.');
+    validatorState.textContent='EXPORT_COLOR_OVERRIDE';
+  }
+}
+function resetSingleExportColorToTrack(tr){
+  const c=(tr&&tr.color)||waveHex||'#28e7ff';
+  singleExportColorManual=false;
+  singleExportColorOverride='';
+  if(singleExportColorInput)singleExportColorInput.value=c;
+  document.documentElement.style.setProperty('--waveRgb',c);
+  document.documentElement.style.setProperty('--borderRgb',c);
+}
+function getSongFileLabel(tr){
+  return cleanTrackTitle((tr&&tr.name)||'song');
+}
+
+
+function setAccentFromTrack(tr){
+  if(!tr||!tr.color)return;
+  waveHex=tr.color;
+  borderHex=tr.color;
+  resetSingleExportColorToTrack(tr);
+  try{waveColor.value=tr.color;borderColor.value=tr.color}catch(e){}
+  showBootDiag('Selected voxel color synced to export: '+tr.color);
+}
+
+function syncExportAccentFromTrack(tr){
+  const c=getTrackExportColor(tr);
+  document.documentElement.style.setProperty('--waveRgb',c);
+  document.documentElement.style.setProperty('--borderRgb',c);
+  if(singleExportColorInput && !singleExportColorManual)singleExportColorInput.value=(tr&&tr.color)||c;
+  if(previewPanel)previewPanel.style.borderColor=c;
+  if(exportPanel)exportPanel.style.borderColor=c;
+  if(exportHistoryPanel)exportHistoryPanel.style.borderColor=c;
+}
+
+function uniquePushAlbum(ids){
+  for(const id of ids){
+    const tr=objectById(id);
+    if(tr&&tr.file&&!albumRouteIds.includes(id))albumRouteIds.push(id);
+  }
+  renderAlbumRoute();
+}
+function openAlbumRoute(){
+  albumOverlay.classList.add('active');
+  if(!albumTitleInput.value.trim())albumTitleInput.value='Voxel Audio Album';
+  if(!albumRouteInput.value.trim())albumRouteInput.value=focusedFolder||normSearch(searchQuery)||'all-loaded';
+  renderAlbumRoute();
+}
+function closeAlbumRoute(){albumOverlay.classList.remove('active')}
+function albumTracks(){return albumRouteIds.map(id=>objectById(id)).filter(t=>t&&t.file)}
+function albumTrackColor(tr){return albumColorOverrides.get(tr.id)||(tr&&tr.color)||'#28e7ff'}
+function setAlbumTrackColor(id,color){if(id&&color){albumColorOverrides.set(id,color);renderAlbumRoute()}}
+function applyAlbumColorToAll(){
+  const color=albumColorInput.value||'#28e7ff';
+  albumTracks().forEach(tr=>albumColorOverrides.set(tr.id,color));
+  albumReason.textContent='Applied '+color+' to all routed album tracks.';
+  renderAlbumRoute();
+}
+function resetAlbumColors(){
+  albumColorOverrides.clear();
+  albumReason.textContent='Album colors reset to each song voxel RGB color.';
+  renderAlbumRoute();
+}
+function renderAlbumRoute(){
+  const list=albumTracks();
+  albumList.innerHTML='';
+  if(!list.length){
+    albumList.innerHTML='<div class="small">No tracks routed yet. Add selected, visible/search results, current folder, or all loaded.</div>';
+    albumReason.textContent='Album route empty.';
+    return;
+  }
+  const frag=document.createDocumentFragment();
+  list.forEach((tr,i)=>{
+    const row=document.createElement('div');
+    row.className='albumTrack';
+    const color=albumTrackColor(tr);
+    row.innerHTML='<div class="num">'+String(i+1).padStart(2,'0')+'</div><div class="meta"><div class="name"><span class="dot" style="background:'+color+'"></span>'+tr.name+'</div><div class="route">'+(tr.path||tr.folder||'root')+(tr.imageFile?' • image bound':' • uses fallback/no image')+' • color '+color+'</div></div><input class="albumColorPick" data-color-track="'+tr.id+'" type="color" value="'+color+'"/><button class="miniBtn" data-remove="'+tr.id+'">Remove</button>';
+    frag.appendChild(row);
+  });
+  albumList.appendChild(frag);
+  albumList.querySelectorAll('[data-remove]').forEach(btn=>btn.onclick=()=>{albumRouteIds=albumRouteIds.filter(id=>id!==btn.dataset.remove);albumColorOverrides.delete(btn.dataset.remove);renderAlbumRoute()});albumList.querySelectorAll('[data-color-track]').forEach(inp=>inp.oninput=()=>setAlbumTrackColor(inp.dataset.colorTrack,inp.value));
+  const missing=list.filter(t=>!t.imageFile).length;
+  albumReason.textContent=list.length+' album track(s) routed across '+new Set(list.map(t=>t.folder)).size+' folder route(s). '+(missing?missing+' track(s) need fallback cover.':'All tracks have bound covers.');
+}
+function addCurrentFolderToAlbum(){
+  const folder=focusedFolder||(currentTrack&&currentTrack.folder);
+  if(!folder){albumReason.textContent='No current folder focus. Select a track or folder first.';return}
+  uniquePushAlbum(objects.filter(o=>o.folder===folder&&o.file).map(o=>o.id));
+}
+function useCurrentImageAsAlbumFallback(){
+  const tr=currentTrack||objectById(focusedObjectId);
+  if(tr&&tr.imageFile){albumFallbackImageTrackId=tr.id;albumReason.textContent='Fallback album cover set from '+tr.name;}
+  else albumReason.textContent='Select a track with a bound image first.';
+  renderAlbumRoute();
+}
+function buildAlbumFfmpegScripts(items,albumTitle,routeName){
+  const enc=getKitEncoderSettings();
+  const esc=s=>String(s||'').replace(/"/g,'\\"');
+  let sh='#!/usr/bin/env bash\nset -euo pipefail\ncd "$(dirname "$0")"\nif ! command -v ffmpeg >/dev/null 2>&1; then echo "FFmpeg not found. Install: brew install ffmpeg / winget install Gyan.FFmpeg / sudo apt install ffmpeg"; exit 1; fi\nrm -f concat_list.txt\n';
+  let bat='@echo off\r\nsetlocal\r\ncd /d "%~dp0"\r\nwhere ffmpeg >nul 2>nul\r\nif errorlevel 1 ( echo FFmpeg not found. Install with winget install Gyan.FFmpeg & pause & exit /b 1 )\r\nif exist concat_list.txt del concat_list.txt\r\n';
+  items.forEach((it,idx)=>{
+    const vf=[
+      'scale=1280:720:force_original_aspect_ratio=increase',
+      'crop=1280:720',
+      'boxblur=24:2',
+      'eq=brightness=-0.18:saturation=0.82'
+    ].join(',');
+    const color=String(it.color||'#28e7ff').replace('#','0x');
+    const title=esc(it.title);
+    const label=esc(it.label);
+    const filter='[1:v]'+vf+'[bg];[1:v]scale=390:390:force_original_aspect_ratio=decrease,pad=390:390:(ow-iw)/2:(oh-ih)/2:color=black@0,format=rgba[cover];[bg][cover]overlay=82:118,drawtext=text="'+title+'":x=540:y=132:fontsize=46:fontcolor=white:box=1:boxcolor=black@0.18:boxborderw=16,drawtext=text="ALBUM • '+esc(albumTitle)+' • '+label+'":x=540:y=310:fontsize=13:fontcolor=white@0.72,drawbox=x=78:y=560:w=1124:h=118:color=black@0.42:t=fill[base];[0:a]showwaves=s=1076x72:mode=line:colors='+color+'@0.95:draw=full[wv];[base][wv]overlay=102:578,drawbox=x=102:y=658:w=1076:h=6:color='+color+'@0.90:t=fill[wave]';
+    sh += '\nffmpeg -y -i "'+it.audioName+'" -loop 1 -i "'+it.imageName+'" -filter_complex \''+filter+'\' -map "[wave]" -map 0:a -r 60 -c:v libx264 -preset '+enc.preset+' -crf '+enc.crf+' -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -movflags +faststart "'+it.outName+'"\n';
+    sh += 'echo "file \\\'./'+it.outName+'\\\'" >> concat_list.txt\n';
+    bat += '\r\nffmpeg -y -i "'+it.audioName+'" -loop 1 -i "'+it.imageName+'" -filter_complex "'+filter.replace(/"/g,'\\"')+'" -map "[wave]" -map 0:a -r 60 -c:v libx264 -preset '+enc.preset+' -crf '+enc.crf+' -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -movflags +faststart "'+it.outName+'"\r\n';
+    bat += 'echo file \''+it.outName+'\'>> concat_list.txt\r\n';
+  });
+  const albumOut=sanitizeFileName(albumTitle||'voxel_audio_album','album')+'_FULL_ALBUM.mp4';
+  sh += '\nffmpeg -y -f concat -safe 0 -i concat_list.txt -c copy "'+albumOut+'"\necho "Rendered album: '+albumOut+'"\n';
+  bat += '\r\nffmpeg -y -f concat -safe 0 -i concat_list.txt -c copy "'+albumOut+'"\r\necho Rendered album: '+albumOut+'\r\npause\r\n';
+  return {sh,bat,albumOut};
+}
+async function buildAlbumKit(){
+  const list=albumTracks();
+  exportPanel.classList.add('active');
+  resetExportRunLog({name:'album-route',folder:'album',file:null});
+  if(!list.length){setExportReason('Album route is empty.','Open Album Route and add selected, visible, folder, or all loaded tracks.');return}
+  const fallback=objectById(albumFallbackImageTrackId)||currentTrack||objectById(focusedObjectId);
+  const fallbackImage=fallback&&fallback.imageFile?fallback.imageFile:null;
+  const missing=list.filter(t=>!t.imageFile&&!fallbackImage);
+  if(missing.length){setExportReason('Album kit blocked: image required.','Bind images to all routed tracks or set a fallback image from the current selected track. Missing: '+missing.length+'. Exports are blocked until album artwork coverage is complete.');validatorState.textContent='ALBUM_IMAGE_REQUIRED';showBootDiag('Album export blocked: '+missing.length+' routed track(s) need artwork or fallback cover.',true);return}
+  const albumTitle=(albumTitleInput.value||'Voxel Audio Album').trim();
+  const routeName=(albumRouteInput.value||'all-loaded').trim();
+  const items=[];
+  list.forEach((tr,i)=>{
+    const trackTitle=cleanTrackTitle(tr.name);
+    const base=String(i+1).padStart(2,'0')+'_'+sanitizeFileName(trackTitle,'track');
+    const audioExt=extFromName(tr.file.name,'audio');
+    const imgFile=tr.imageFile||fallbackImage;
+    const imgExt=extFromName(imgFile.name,'png');
+    items.push({trackId:tr.id,title:trackTitle,label:cleanTrackTitle(tr.name),route:tr.path||tr.folder,color:albumTrackColor(tr),sourceVoxelColor:tr.color,audioName:base+'_audio.'+audioExt,imageName:base+'_cover.'+imgExt,outName:base+'_Voxel_Audio.mp4',audioFile:tr.file,imageFile:imgFile});
+  });
+  const scripts=buildAlbumFfmpegScripts(items,albumTitle,routeName);
+  const manifest={app:'Voxel Audio',mode:'album-route-ffmpeg-kit',createdAt:new Date().toISOString(),albumTitle,routeName,trackCount:items.length,output:scripts.albumOut,tracks:items.map(({audioFile,imageFile,...rest})=>rest)};
+  pushExportLog('building full album route kit',manifest);
+  setExportReason('Album kit generated.','Downloads may appear as multiple files. Put them in one folder and run render_album_ffmpeg.sh or render_album_ffmpeg.bat.');
+  validatorState.textContent='ALBUM_KIT_READY';
+  let delay=0;
+  const dl=(blob,name)=>setTimeout(()=>downloadBlob(blob,name),delay+=220);
+  items.forEach(it=>{dl(it.audioFile,it.audioName);dl(it.imageFile,it.imageName)});
+  dl(new Blob([JSON.stringify(manifest,null,2)],{type:'application/json'}),'album_manifest.json');
+  dl(new Blob([scripts.sh],{type:'text/x-shellscript'}),'render_album_ffmpeg.sh');
+  dl(new Blob([scripts.bat],{type:'text/plain'}),'render_album_ffmpeg.bat');
+  dl(new Blob([exportLogLines.join('\n')+'\n'],{type:'text/plain'}),'Voxel_Audio_Album_Kit_Log.txt');
+}
+function resetExportSmoothingForTrack(tr){
+  const id=tr&&tr.id;
+  if(exportLastSmoothTrack!==id){
+    exportLastSmoothTrack=id;
+    exportWaveSmooth=null;
+    exportBarSmooth=null;
+  }
+}
+function smoothstep01(x){
+  x=Math.max(0,Math.min(1,x));
+  return x*x*(3-2*x);
+}
+function getSmoothedExportWave(points=240){
+  if(!exportWaveSmooth||exportWaveSmooth.length!==points)exportWaveSmooth=new Float32Array(points);
+  const out=exportWaveSmooth;
+  if(!timeData||!timeData.length){
+    for(let i=0;i<points;i++)out[i]*=.92;
+    return out;
+  }
+  const len=timeData.length;
+  for(let i=0;i<points;i++){
+    const pos=i/(points-1)*(len-1);
+    const a=Math.floor(pos),b=Math.min(len-1,a+1),f=pos-a;
+    const va=(timeData[a]-128)/128;
+    const vb=(timeData[b]-128)/128;
+    let target=va+(vb-va)*f;
+    // Soft-limit peaks so the line moves musically instead of snapping.
+    target=Math.tanh(target*1.18);
+    out[i]+= (target-out[i])*.22;
+  }
+  // Tiny neighbor pass to remove digital stair-stepping.
+  for(let i=1;i<points-1;i++)out[i]=(out[i-1]*.18)+(out[i]*.64)+(out[i+1]*.18);
+  return out;
+}
+function getSmoothedExportBars(bars=96){
+  if(!exportBarSmooth||exportBarSmooth.length!==bars)exportBarSmooth=new Float32Array(bars);
+  const out=exportBarSmooth;
+  if(!freqData||!freqData.length){
+    for(let i=0;i<bars;i++)out[i]*=.90;
+    return out;
+  }
+  const maxBin=Math.max(1,Math.floor(freqData.length*.68));
+  for(let i=0;i<bars;i++){
+    const start=Math.floor(i/bars*maxBin);
+    const end=Math.max(start+1,Math.floor((i+1)/bars*maxBin));
+    let sum=0,count=0;
+    for(let j=start;j<end;j++){sum+=freqData[j]||0;count++}
+    const raw=(count?sum/count:0)/255;
+    const target=smoothstep01(raw);
+    out[i]+=(target-out[i])*.16;
+  }
+  for(let i=1;i<bars-1;i++)out[i]=(out[i-1]*.12)+(out[i]*.76)+(out[i+1]*.12);
+  return out;
+}
+function drawSmoothExportWave(g,x,y,w,h,accent){
+  g.save();
+  const wave=getSmoothedExportWave(260);
+  g.strokeStyle=accent;
+  g.lineWidth=2.2+energy*3.2;
+  g.shadowBlur=12+beat*18;
+  g.shadowColor=accent;
+  g.lineJoin='round';
+  g.lineCap='round';
+  g.beginPath();
+  for(let i=0;i<wave.length;i++){
+    const px=x+(i/(wave.length-1))*w;
+    const py=y+h/2+wave[i]*(h*.28+energy*h*.18);
+    if(i===0)g.moveTo(px,py);else g.lineTo(px,py);
+  }
+  g.stroke();
+  // Add a faint secondary eased trace for smoother motion blur without heavy canvas filters.
+  g.globalAlpha=.24;
+  g.lineWidth=6+energy*5;
+  g.beginPath();
+  for(let i=0;i<wave.length;i+=2){
+    const px=x+(i/(wave.length-1))*w;
+    const py=y+h/2+wave[i]*(h*.22+energy*h*.12);
+    if(i===0)g.moveTo(px,py);else g.lineTo(px,py);
+  }
+  g.stroke();
+  g.globalAlpha=1;
+  g.shadowBlur=0;
+  g.restore();
+}
+function drawSmoothExportBars(g,x,y,w,h,accent){
+  const bars=getSmoothedExportBars(104);
+  const bw=w/bars.length;
+  for(let i=0;i<bars.length;i++){
+    const val=bars[i];
+    const bh=val*h*.78;
+    g.fillStyle=rgba(accent,.08+val*.36);
+    g.fillRect(x+i*bw,y+h-bh,Math.max(2,bw-2),bh);
+  }
+}
+
+
+const LOCAL_ADMIN_WATERMARK_KEY='VOXEL-AUDIO-ADMIN';
+const ADMIN_UNLOCK_STORAGE_KEY='voxel_audio_admin_no_watermark_unlocked_v1';
+const ADMIN_NAME_STORAGE_KEY='voxel_audio_admin_name_v1';
+
+function getAdminName(){
+  return adminNameInput&&adminNameInput.value?adminNameInput.value.trim():'';
+}
+function updateAdminWatermarkState(){
+  if(adminWatermarkState){
+    adminWatermarkState.textContent=adminWatermarkUnlocked?'no-watermark unlocked — preview/export clean':'watermark on — enter admin key to remove';
+    adminWatermarkState.style.color=adminWatermarkUnlocked?'#9dffb2':'#aeb8d8';
+  }
+}
+function unlockAdminWatermark(){
+  const key=(adminKeyInput&&adminKeyInput.value?adminKeyInput.value.trim():'');
+  const adminName=getAdminName();
+  if(key===LOCAL_ADMIN_WATERMARK_KEY){
+    adminWatermarkUnlocked=true;
+    try{
+      localStorage.setItem(ADMIN_UNLOCK_STORAGE_KEY,'1');
+      if(adminName)localStorage.setItem(ADMIN_NAME_STORAGE_KEY,adminName);
+    }catch(e){}
+    updateAdminWatermarkState();
+    if(previewActive)previewState.textContent='previewing clean/no-watermark export';
+    showBootDiag('No-watermark unlocked'+(adminName?' for '+adminName:'')+'. Preview, Record, and MP4 Kit will render clean.');
+    validatorState.textContent='ADMIN_NO_WATERMARK';
+    setExportReason('Admin unlock active.','Watermark is disabled in Live Preview and Browser Record for this local session/browser. MP4 kit manifest also records the admin clean-export status.');
+  }else{
+    adminWatermarkUnlocked=false;
+    updateAdminWatermarkState();
+    showBootDiag('Admin key rejected. Watermark remains enabled.',true);
+    validatorState.textContent='ADMIN_KEY_REJECTED';
+    setExportReason('Admin key rejected.','Use the local admin key to disable watermark for this browser/session.');
+  }
+}
+function lockAdminWatermark(){
+  adminWatermarkUnlocked=false;
+  try{localStorage.removeItem(ADMIN_UNLOCK_STORAGE_KEY)}catch(e){}
+  updateAdminWatermarkState();
+  if(previewActive)previewState.textContent='previewing watermarked export';
+  showBootDiag('Watermark locked back on. Live Preview/Record will show the TizWildin watermark again.');
+  validatorState.textContent='WATERMARK_ON';
+}
+function loadAdminWatermarkState(){
+  try{
+    adminWatermarkUnlocked=localStorage.getItem(ADMIN_UNLOCK_STORAGE_KEY)==='1';
+    const n=localStorage.getItem(ADMIN_NAME_STORAGE_KEY);
+    if(n&&adminNameInput&&!adminNameInput.value)adminNameInput.value=n;
+  }catch(e){adminWatermarkUnlocked=false}
+  updateAdminWatermarkState();
+}
+
+
+
+function runExportCrosscheck(){
+  const tr=getSelectedPlayableTrack();
+  exportPanel.classList.add('active');
+  const lines=[];
+  if(!tr||!tr.file) lines.push('✗ Select/play an audio file.');
+  else lines.push('✓ Audio selected: '+tr.name);
+  if(tr&&trackHasBoundImage(tr)) lines.push('✓ Image linked for this selected song.');
+  else lines.push('✗ Image required before Preview/Record/MP4 Kit.');
+  const artist=getExportArtist();
+  if(artist) lines.push('✓ Artist locked: '+artist+' ('+artist.length+'/36)');
+  else lines.push('✗ Artist name required before Preview/Record/MP4 Kit.');
+  lines.push(adminWatermarkUnlocked?'✓ Admin clean export: watermark removed.':'• Watermark active: enter Admin name/key to remove.');
+  lines.push('• Export color: '+getTrackExportColor(tr)+(singleExportColorManual?' (manual override)':' (selected voxel)'));
+  const ok=tr&&tr.file&&trackHasBoundImage(tr)&&!!artist;
+  setExportReason(ok?'Crosscheck passed.':'Crosscheck needs attention.',lines.join('\n'));
+  validatorState.textContent=ok?(adminWatermarkUnlocked?'READY_NO_WATERMARK':'READY_WATERMARKED'):'CROSSCHECK_BLOCKED';
+  showBootDiag(ok?(adminWatermarkUnlocked?'Ready: clean/no-watermark export.':'Ready: watermarked export.'):'Crosscheck blocked: missing audio or image.',!ok);
+}
+
+function drawExportWatermark(g,W,H,accent='#28e7ff'){
+  if(adminWatermarkUnlocked)return;
+  // Compact top-right watermark dock. Kept out of waveform/timestamp area to prevent overlap.
+  g.save();
+  const boxW=300, boxH=38, x=W-boxW-58, y=68;
+  g.globalAlpha=.82;
+  g.fillStyle=rgbaHex(accent,.14);
+  drawRoundedRect(g,x,y,boxW,boxH,12); g.fill();
+  g.strokeStyle=rgbaHex(accent,.38);
+  g.lineWidth=1;
+  g.stroke();
+
+  g.textAlign='left';
+  g.textBaseline='middle';
+  g.font='700 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+  g.fillStyle=rgbaHex(accent,.92);
+  g.fillText('TIZWILDIN ENTERTAINMENT',x+14,y+15);
+
+  g.font='10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+  g.fillStyle=rgbaHex(accent,.64);
+  g.fillText('A TizWildin Entertainment Product',x+14,y+28);
+  g.restore();
+}
+
+function hexToRgb(hex){
+  const s=String(hex||'#28e7ff').replace('#','');
+  const n=parseInt(s.length===3?s.split('').map(c=>c+c).join(''):s,16);
+  return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};
+}
+function rgbaHex(hex,a){
+  const c=hexToRgb(hex);
+  return 'rgba('+c.r+','+c.g+','+c.b+','+a+')';
+}
+
+function fitTextEllipsis(g,text,maxWidth){
+  const s=String(text||'');
+  if(!s) return '';
+  if(g.measureText(s).width<=maxWidth) return s;
+  let out=s;
+  while(out.length>1 && g.measureText(out+'…').width>maxWidth) out=out.slice(0,-1);
+  return out+'…';
+}
+
+function drawReactiveCircleVisualizer(g,cx,cy,baseR,accent){
+  const bassR=baseR + bass*22;
+  const midR=baseR + 9 + mid*18;
+  const trebleR=baseR + 18 + treble*16;
+  g.save();
+  g.lineCap='round';
+  g.shadowColor=accent;
+  g.shadowBlur=18+energy*28;
+
+  g.strokeStyle=rgbaHex(accent,.95);
+  g.lineWidth=3.2;
+  g.beginPath();
+  g.arc(cx,cy,bassR,0,TAU);
+  g.stroke();
+
+  g.strokeStyle=rgbaHex(accent,.42);
+  g.lineWidth=1.8;
+  g.beginPath();
+  g.arc(cx,cy,midR,Math.sin(tNow*.002)*.5,TAU+Math.sin(tNow*.002)*.5);
+  g.stroke();
+
+  g.strokeStyle=rgbaHex(accent,.24);
+  g.lineWidth=1.2;
+  g.beginPath();
+  g.arc(cx,cy,trebleR,-Math.cos(tNow*.0017)*.7,TAU-Math.cos(tNow*.0017)*.7);
+  g.stroke();
+
+  if(freqData&&freqData.length){
+    const spokes=40;
+    for(let i=0;i<spokes;i++){
+      const bin=Math.floor(i/spokes*freqData.length*.72);
+      const v=(freqData[bin]||0)/255;
+      const a=i/spokes*TAU + tNow*.00045;
+      const r1=baseR+30;
+      const r2=r1+v*(18+energy*28);
+      g.strokeStyle=rgbaHex(accent,.18+v*.52);
+      g.lineWidth=.7+v*2.2;
+      g.beginPath();
+      g.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);
+      g.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);
+      g.stroke();
+    }
+  }
+
+  g.shadowBlur=0;
+  g.fillStyle=rgbaHex(accent,.10+energy*.10);
+  g.beginPath();
+  g.arc(cx,cy,Math.max(2,baseR-10+bass*10),0,TAU);
+  g.fill();
+  g.restore();
+}
+
+
+function drawSafeBackgroundGlow(g,W,H,accent){
+  // Locked background-only glow. No large filled geometry, no foreground triangles/blobs.
+  g.save();
+  g.globalCompositeOperation='screen';
+  const c=hexToRgb(accent);
+  const glow1=g.createRadialGradient(W*.50,H*.50,40,W*.50,H*.50,520);
+  glow1.addColorStop(0,'rgba('+c.r+','+c.g+','+c.b+',0.16)');
+  glow1.addColorStop(.48,'rgba('+c.r+','+c.g+','+c.b+',0.075)');
+  glow1.addColorStop(1,'rgba('+c.r+','+c.g+','+c.b+',0)');
+  g.fillStyle=glow1;
+  g.fillRect(0,0,W,H);
+
+  const glow2=g.createRadialGradient(W*.86,H*.18,20,W*.86,H*.18,320);
+  glow2.addColorStop(0,'rgba('+c.r+','+c.g+','+c.b+',0.09)');
+  glow2.addColorStop(1,'rgba('+c.r+','+c.g+','+c.b+',0)');
+  g.fillStyle=glow2;
+  g.fillRect(0,0,W,H);
+  g.restore();
+}
+
+function renderExportVideoFrame(g,canvas,img,tr,startedAt){
+  resetExportSmoothingForTrack(tr);
+  const W=canvas.width,H=canvas.height;
+  const progress=(audio.duration&&isFinite(audio.duration))?audio.currentTime/audio.duration:0;
+  const accent=getTrackExportColor(tr);
+  const title=getExportTitle(tr);
+  const songFile=getSongFileLabel(tr);
+  const desc=getExportDescription();
+  const credit=getExportCreditLine();
+  syncExportAccentFromTrack(tr);
+
+  g.clearRect(0,0,W,H);
+
+  // Background image layer.
+  if(img){
+    drawCoverCrop(g,img,-40,-40,W+80,H+80,.30,20);
+  }else{
+    const bg=g.createLinearGradient(0,0,W,H);
+    bg.addColorStop(0,'#05070d');bg.addColorStop(.55,'#12162a');bg.addColorStop(1,'#05070d');
+    g.fillStyle=bg;g.fillRect(0,0,W,H);
+  }
+  g.fillStyle='rgba(0,0,0,.62)';
+  g.fillRect(0,0,W,H);
+
+  // Safe background glow only. Large accent shapes are intentionally disabled
+  // so they can never cover the image, panels, title, or waveform.
+  drawSafeBackgroundGlow(g,W,H,accent);
+
+  g.globalCompositeOperation='source-over';
+
+  // Cover art layer.
+  const pulse=1+beat*.006+bass*.006;
+  const art=390*pulse,ax=82-(art-390)/2,ay=118-(art-390)/2;
+  if(img){
+    g.save();
+    drawRoundedRect(g,ax,ay,art,art,34);
+    g.clip();
+    drawCoverCrop(g,img,ax,ay,art,art,1,0);
+    g.restore();
+    g.save();g.strokeStyle=rgbaHex(accent,.46);g.lineWidth=2;drawRoundedRect(g,ax,ay,art,art,34);g.stroke();g.restore();
+  }else{
+    drawExportFallbackArt(g,ax,ay,art,art,tr.name);
+  }
+
+  // Title + adaptive metadata layout.
+  const hasDesc=!!desc;
+  const titleY=hasDesc?118:132;
+  const metaY=hasDesc?300:314;
+  const panelY=hasDesc?332:342;
+  const panelH=hasDesc?104:78;
+  const circleX=hasDesc?1068:1072;
+  const circleY=hasDesc?385:381;
+  const circleBase=hasDesc?24:28;
+
+  g.fillStyle=rgbaHex(accent,.98);
+  g.textAlign='left';
+  g.textBaseline='top';
+  g.font='800 46px system-ui,Segoe UI,Arial';
+  g.shadowColor=accent;g.shadowBlur=10+energy*14;wrapText(g,title,540,titleY,650,56,3);g.shadowBlur=0;
+
+  let meta='VOXEL AUDIO EXPORT  •  '+songFile;
+  if(credit) meta+='  •  '+credit;
+  g.font='13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+  g.fillStyle=rgbaHex(accent,.78);
+  const metaSafe=fitTextEllipsis(g,meta,560);
+  g.fillText(metaSafe,540,metaY);
+
+  // Compact metadata panel. If Description is blank, the panel becomes a tighter
+  // visualizer capsule instead of leaving empty text space.
+  g.fillStyle=rgbaHex(accent,.105);
+  drawRoundedRect(g,540,panelY,500,panelH,24);
+  g.fill();
+  g.save();g.shadowColor=accent;g.shadowBlur=18;g.strokeStyle=rgbaHex(accent,.18);g.stroke();g.restore();
+  g.strokeStyle=rgbaHex(accent,.34);
+  g.lineWidth=1;
+  g.stroke();
+
+  if(hasDesc){
+    g.font='12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+    g.fillStyle=rgbaHex(accent,.72);
+    wrapText(g,desc,572,panelY+25,334,20,3);
+  }else{
+    g.font='11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+    g.fillStyle=rgbaHex(accent,.54);
+    g.fillText('reactive frequency capsule',572,panelY+30);
+  }
+
+  // Reactive frequency circle.
+  drawReactiveCircleVisualizer(g,circleX,circleY,circleBase,accent);
+
+  // Waveform panel and clipped waveform.
+  const waveX=78,waveY=560,waveW2=1124,waveH2=118;
+  g.fillStyle=rgbaHex(accent,.075);
+  drawRoundedRect(g,waveX,waveY,waveW2,waveH2,26);
+  g.fill();
+  g.save();g.shadowColor=accent;g.shadowBlur=20;g.strokeStyle=rgbaHex(accent,.20);g.stroke();g.restore();
+  g.strokeStyle=rgbaHex(accent,.34);
+  g.lineWidth=1;
+  g.stroke();
+
+  g.save();
+  g.beginPath();
+  drawRoundedRect(g,waveX+24,waveY+18,waveW2-48,72,18);
+  g.clip();
+  drawSmoothExportBars(g,waveX+24,waveY+22,waveW2-48,62,accent);
+  drawSmoothExportWave(g,waveX+24,waveY+18,waveW2-48,72,accent);
+  g.restore();
+
+  g.fillStyle=accent;
+  drawRoundedRect(g,waveX+24,waveY+98,(waveW2-48)*Math.max(0,Math.min(1,progress)),6,3);
+  g.fill();
+
+  g.fillStyle=rgbaHex(accent,.78);
+  g.font='14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+  g.textAlign='left';
+  g.fillText(fmt(audio.currentTime),waveX+24,waveY+96);
+  g.textAlign='right';
+  g.fillText(fmt(audio.duration),waveX+waveW2-24,waveY+96);
+
+  // Branding + watermark.
+  g.textAlign='left';
+  g.fillStyle=rgbaHex(accent,.30);
+  g.font='800 18px system-ui,Segoe UI,Arial';
+  g.fillText('Voxel Audio',74,46);
+  g.textAlign='right';
+  g.font='12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+  g.fillStyle=rgbaHex(accent,.56);
+  g.fillText('rendered locally in browser',1206,50);
+
+  drawExportWatermark(g,W,H,accent);
+}
+
+function trackHasBoundImage(tr){
+  return !!(tr && tr.file && (tr.imageFile || tr.image));
+}
+function requireSelectedTrackImage(actionLabel='export'){
+  const tr=getSelectedPlayableTrack();
+  if(!tr||!tr.file){
+    exportPanel&&exportPanel.classList.add('active');
+    setExportReason(actionLabel+' needs a selected audio file.','Select/play a track first, then bind an image to that exact track.');
+    validatorState.textContent='IMAGE_REQUIRED_NEEDS_AUDIO';
+    showBootDiag(actionLabel+' blocked: select a song first.',true);
+    return null;
+  }
+  if(!trackHasBoundImage(tr)){
+    exportPanel&&exportPanel.classList.add('active');
+    setExportReason(actionLabel+' blocked: image required.','Bind or drop an image onto the selected song first. For this workflow, every Record/Preview/MP4 export must include artwork floating with the selected single.');
+    validatorState.textContent='IMAGE_REQUIRED';
+    showBootDiag(actionLabel+' blocked: bind/drop an image on the selected song first.',true);
+    return null;
+  }
+  if(!requireArtistName(actionLabel))return null;
+  lockArtistForExport();
+  return tr;
+}
+function markImageRequirementSatisfied(tr){
+  if(tr&&trackHasBoundImage(tr)){
+    showBootDiag('Image linked to '+tr.name+'. Preview / Record / MP4 Kit are now unlocked for this song.');
+    validatorState.textContent='IMAGE_LINKED';
+  }
+}
+function getSelectedPlayableTrack(){let tr=currentTrack||objectById(focusedObjectId)||visibleObjects[0]||objects[0];if(!tr||!tr.file)return null;return tr}
+
+
+function nowStamp(){return new Date().toISOString()}
+function pushExportLog(msg,data){
+  const line='['+nowStamp()+'] '+msg+(data!==undefined?' '+safeJson(data):'');
+  exportLogLines.push(line);
+  if(exportLog){exportLog.textContent=exportLogLines.slice(-90).join('\n');exportLog.scrollTop=exportLog.scrollHeight}
+  console.log('[VoxelAudioExport]',msg,data||'');
+}
+function safeJson(v){try{return JSON.stringify(v)}catch(e){return String(v)}}
+function setExportReason(msg,detail){
+  const text='Reason: '+msg+(detail?'\n'+detail:'');
+  if(exportReason)exportReason.textContent=text;
+  pushExportLog('reason', {msg, detail:detail||''});
+}
+function resetExportRunLog(tr){
+  exportLogLines=[];
+  if(exportLog)exportLog.textContent='';
+  setExportReason('none yet');
+  pushExportLog('export run started',{
+    app:'Voxel Audio',
+    track:tr&&tr.name,
+    exportTitle:(tr&&exportTitleInput&&exportTitleInput.value)||'',
+    voxelColor:tr&&tr.color,
+    folder:tr&&tr.folder,
+    fileSizeBytes:tr&&tr.file&&tr.file.size,
+    fileType:tr&&tr.file&&tr.file.type,
+    userAgent:navigator.userAgent,
+    platform:navigator.platform,
+    mediaRecorder:!!window.MediaRecorder,
+    audioContext:!!(window.AudioContext||window.webkitAudioContext),
+    canvasCapture:!!HTMLCanvasElement.prototype.captureStream,
+    mp4Supported:!!(window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported('video/mp4')),
+    webmSupported:!!(window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported('video/webm'))
+  });
+}
+function downloadRunLog(){
+  const header='Voxel Audio Export Run Log\nGenerated: '+nowStamp()+'\n\n';
+  const blob=new Blob([header+exportLogLines.join('\n')+'\n'],{type:'text/plain;charset=utf-8'});
+  if(lastExportBlobUrl)try{URL.revokeObjectURL(lastExportBlobUrl)}catch(e){}
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='Voxel_Audio_Export_Run_Log_'+Date.now()+'.txt';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1500);
+}
+
+async function copyRunLog(){
+  const payload=exportLogLines.join('\n')||'No export log lines yet.';
+  try{
+    await navigator.clipboard.writeText(payload);
+    pushExportLog('run log copied to clipboard');
+    setExportReason('Run log copied to clipboard.');
+  }catch(e){
+    pushExportLog('copy log failed',{error:String(e.message||e)});
+    setExportReason('Could not copy run log.',String(e.message||e));
+  }
+}
+function runExportPreflight(showPanel=true){
+  const tr=getSelectedPlayableTrack();
+  if(showPanel) exportPanel.classList.add('active');
+  resetExportRunLog(tr||{name:'none',folder:'none',file:null});
+  const checks=[];
+  const add=(name,ok,detail='')=>{checks.push({name,ok,detail});pushExportLog('preflight '+(ok?'pass':'fail'),{name,detail})};
+  add('Playable selected audio',!!tr,tr?tr.name:'No selected playable audio file');
+  add('Bound cover image',!!(tr&&tr.imageFile),tr&&tr.imageFile?tr.imageFile.name:'Bind an image to the selected track first');
+  add('Browser download support',!!(window.Blob&&URL&&URL.createObjectURL),'Required to download kit files');
+  add('Deterministic renderer target',true,'FFmpeg CLI renders final MP4 outside browser capture');
+  add('No browser recording dependency',true,'MediaRecorder/captureStream not required for final MP4 kit');
+  const failed=checks.filter(c=>!c.ok);
+  if(failed.length){
+    exportState.textContent='preflight failed';
+    exportInfo.textContent=failed.length+' render-kit preflight check(s) failed.';
+    setExportReason('Preflight failed.',failed.map(f=>f.name+': '+f.detail).join('\n'));
+    validatorState.textContent='PREFLIGHT_FAILED';
+    return false;
+  }
+  exportState.textContent='preflight passed';
+  exportInfo.textContent='Preflight passed. Build MP4 Kit will download audio, cover, manifest, and FFmpeg scripts.';
+  setExportReason('Preflight passed.','Ready to Build MP4 Kit. This path does not record the browser.');
+  validatorState.textContent='PREFLIGHT_PASSED';
+  return true;
+}
+function cycleExportFormat(){
+  const order=['auto','mp4','webm'];
+  exportFormatPreference=order[(order.indexOf(exportFormatPreference)+1)%order.length];
+  formatBtn.textContent='Record: '+exportFormatPreference.toUpperCase();
+  setExportReason('Export format preference changed.',exportFormatPreference==='auto'?'Auto chooses MP4 if supported, then WebM.':('Forces '+exportFormatPreference.toUpperCase()+' if supported, otherwise falls back safely.'));
+}
+function pickExportMime(){
+  const autoOptions=[
+    {mime:'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',ext:'mp4',label:'MP4/H.264'},
+    {mime:'video/mp4',ext:'mp4',label:'MP4'},
+    {mime:'video/webm;codecs=vp9,opus',ext:'webm',label:'WebM/VP9'},
+    {mime:'video/webm;codecs=vp8,opus',ext:'webm',label:'WebM/VP8'},
+    {mime:'video/webm',ext:'webm',label:'WebM'}
+  ];
+  const options=exportFormatPreference==='mp4'
+    ? autoOptions.filter(o=>o.ext==='mp4').concat(autoOptions.filter(o=>o.ext!=='mp4'))
+    : exportFormatPreference==='webm'
+      ? autoOptions.filter(o=>o.ext==='webm').concat(autoOptions.filter(o=>o.ext!=='webm'))
+      : autoOptions;
+  pushExportLog('format preference',{preference:exportFormatPreference});
+  for(const o of options){
+    let ok=false;
+    try{ ok=MediaRecorder.isTypeSupported(o.mime); }catch(e){pushExportLog('mime probe threw',{mime:o.mime,error:String(e.message||e)})}
+    pushExportLog('mime probe',{mime:o.mime,label:o.label,supported:ok});
+    if(ok) return o;
+  }
+  pushExportLog('mime fallback',{mime:'browser default'});
+  return {mime:'',ext:'webm',label:'browser-default'};
+}
+function getReliableExportAudioStream(){
+  if(!audioContext) ensureAudioGraph();
+  pushExportLog('audio graph state before stream',{state:audioContext&&audioContext.state,hasSource:!!source,hasAnalyser:!!analyser});
+  if(!exportAudioDestination) exportAudioDestination=audioContext.createMediaStreamDestination();
+  try{ source.disconnect(exportAudioDestination); }catch(e){}
+  try{ source.connect(exportAudioDestination); }catch(e){pushExportLog('source connect to export destination failed',{error:String(e.message||e)})}
+  const stream=exportAudioDestination.stream;
+  const graphTracks=stream&&stream.getAudioTracks?stream.getAudioTracks():[];
+  pushExportLog('webaudio export destination tracks',{audioTracks:graphTracks.length,trackStates:graphTracks.map(t=>({enabled:t.enabled,readyState:t.readyState,label:t.label||''}))});
+  if(graphTracks.length) return stream;
+  const direct=(audio.captureStream&&audio.captureStream())||(audio.mozCaptureStream&&audio.mozCaptureStream());
+  const directTracks=direct&&direct.getAudioTracks?direct.getAudioTracks():[];
+  pushExportLog('direct audio element capture tracks',{audioTracks:directTracks.length});
+  if(directTracks.length) return direct;
+  setExportReason('No audio stream could be created for the recorder.','The browser returned 0 audio tracks from both WebAudio MediaStreamDestination and audio.captureStream(). Try Chrome/Edge, press Play once, then Export again; if MP4 fails, let it fall back to WebM.');
+  return null;
+}
+
+function sanitizeFileName(name, fallback='file'){
+  const base=(name||fallback).replace(/\.[^/.]+$/,'').replace(/[^\w\-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80);
+  return base||fallback;
+}
+function extFromName(name, fallback){
+  const m=String(name||'').match(/\.([a-z0-9]+)$/i);
+  return (m?m[1]:fallback).toLowerCase();
+}
+function downloadBlob(blob, filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1500);
+}
+
+function getKitEncoderSettings(){
+  if(kitSpeedPreset==='turbo')return {preset:'ultrafast',crf:23,label:'Turbo'};
+  if(kitSpeedPreset==='quality')return {preset:'medium',crf:18,label:'Quality'};
+  return {preset:'veryfast',crf:20,label:'Fast'};
+}
+function cycleKitSpeed(){
+  const order=['fast','turbo','quality'];
+  kitSpeedPreset=order[(order.indexOf(kitSpeedPreset)+1)%order.length];
+  const s=getKitEncoderSettings();
+  kitSpeedBtn.textContent='Kit: '+s.label;
+  setExportReason('Render kit speed changed.','Kit preset '+s.label+' uses libx264 preset='+s.preset+' crf='+s.crf+'. Output audio stays normal speed.');
+  pushExportLog('kit speed preset changed',s);
+}
+
+function buildFfmpegScripts(audioName,imageName,outName,title,accentColor='#28e7ff',songFile='song'){
+  const enc=getKitEncoderSettings();
+  const safeTitle=String(title||'Voxel Audio').replace(/"/g,'\\"');
+  const safeSong=String(songFile||'song').replace(/"/g,'\\"');
+  const ffColor=String(accentColor||'#28e7ff').replace('#','0x');
+  const vf=[
+    'scale=1280:720:force_original_aspect_ratio=increase',
+    'crop=1280:720',
+    'boxblur=24:2',
+    'eq=brightness=-0.18:saturation=0.82'
+  ].join(',');
+  const filter='[1:v]'+vf+'[bg];[1:v]scale=390:390:force_original_aspect_ratio=decrease,pad=390:390:(ow-iw)/2:(oh-ih)/2:color=black@0,format=rgba[cover];[bg][cover]overlay=82:118,drawtext=text="'+safeTitle+'":x=540:y=132:fontsize=46:fontcolor=white:box=1:boxcolor=black@0.18:boxborderw=16,drawtext=text="VOXEL AUDIO EXPORT  •  '+safeSong+'":x=540:y=310:fontsize=13:fontcolor=white@0.72,drawbox=x=78:y=560:w=1124:h=118:color=black@0.42:t=fill[base];[0:a]showwaves=s=1076x72:mode=line:colors='+ffColor+'@0.95:draw=full[wv];[base][wv]overlay=102:578,drawbox=x=102:y=658:w=1076:h=6:color='+ffColor+'@0.90:t=fill[wave]';
+  const sh=`#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")"
+if ! command -v ffmpeg >/dev/null 2>&1; then
+  echo "FFmpeg not found. Install it first:"
+  echo "  macOS: brew install ffmpeg"
+  echo "  Windows: winget install Gyan.FFmpeg"
+  echo "  Linux: sudo apt install ffmpeg"
+  exit 1
+fi
+
+ffmpeg -y \\
+  -i "${audioName}" \\
+  -loop 1 -i "${imageName}" \\
+  -filter_complex '${filter}' \\
+  -map "[wave]" -map 0:a \\
+  -c:v libx264 -preset ${enc.preset} -crf ${enc.crf} -pix_fmt yuv420p \\
+  -c:a aac -b:a 192k -shortest -movflags +faststart \\
+  "${outName}"
+
+echo "Rendered: ${outName}"
+`;
+  const bat=`@echo off
+setlocal
+cd /d "%~dp0"
+where ffmpeg >nul 2>nul
+if errorlevel 1 (
+  echo FFmpeg not found. Install it first:
+  echo   winget install Gyan.FFmpeg
+  echo or download from ffmpeg.org
+  pause
+  exit /b 1
+)
+
+ffmpeg -y ^
+  -i "${audioName}" ^
+  -loop 1 -i "${imageName}" ^
+  -filter_complex "${filter.replace(/"/g,'\\"')}" ^
+  -map "[wave]" -map 0:a ^
+  -r 60 ^
+  -c:v libx264 -preset ${enc.preset} -crf ${enc.crf} -pix_fmt yuv420p ^
+  -c:a aac -b:a 192k -shortest -movflags +faststart ^
+  "${outName}"
+
+echo Rendered: ${outName}
+pause
+`;
+  return {sh,bat};
+}
+async function buildDeterministicRenderKit(){
+  const tr=requireSelectedTrackImage('Build MP4 Kit');
+  exportPanel.classList.add('active');
+  resetExportRunLog(tr||{name:'none',folder:'none',file:null});
+  if(!tr)return;
+  prepareExportTitle(tr);
+  const imgFile=tr.imageFile;
+  if(!imgFile){setExportReason('Build MP4 Kit needs original image file.','Drop/bind the image again using Bind Image To Selected so the MP4 Kit can download the cover source file.');validatorState.textContent='KIT_NEEDS_IMAGE_FILE';return}
+  const exportTitle=getExportTitle(tr);const base=sanitizeFileName(exportTitle,'voxel_audio');
+  const audioExt=extFromName(tr.file.name,'audio');
+  const imageExt=extFromName(imgFile.name,'png');
+  const audioName=base+'_audio.'+audioExt;
+  const imageName=base+'_cover.'+imageExt;
+  const outName=base+'_Voxel_Audio.mp4';
+  const manifest={
+    app:'Voxel Audio',
+    mode:'deterministic-ffmpeg-render-kit',
+    createdAt:new Date().toISOString(),
+    trackName:tr.name,
+    exportTitle:exportTitle,
+    exportDescription:getExportDescription(),
+    exportArtist:getExportArtist(),
+    exportFeat:getExportFeat(),
+    adminName:getAdminName(),
+    adminNoWatermarkUnlocked:adminWatermarkUnlocked,
+    folder:tr.folder,
+    audioFile:audioName,
+    imageFile:imageName,
+    outputFile:outName,
+    renderer:'FFmpeg libx264 + AAC',
+    renderSpeedPreset:kitSpeedPreset,
+    encoderSettings:getKitEncoderSettings(),
+    resolution:'1280x720',
+    reason:'Deterministic render path avoids browser MediaRecorder/captureStream failures.'
+  };
+  pushExportLog('building deterministic render kit',manifest);pushExportLog('ffmpeg kit renders as fast as CPU allows while preserving normal audio speed',getKitEncoderSettings());
+  const scripts=buildFfmpegScripts(audioName,imageName,outName,exportTitle,tr.color,getSongFileLabel(tr));
+  exportState.textContent='kit ready';
+  exportInfo.textContent='Downloading render kit files. Put them in one folder and run render_ffmpeg.sh or render_ffmpeg.bat.';
+  setExportReason('Render kit generated.','This does not record the browser. It downloads source assets + deterministic FFmpeg scripts for real MP4 output.');
+  validatorState.textContent='KIT_READY';
+  downloadBlob(tr.file,audioName);
+  setTimeout(()=>downloadBlob(imgFile,imageName),300);
+  setTimeout(()=>downloadBlob(new Blob([JSON.stringify(manifest,null,2)],{type:'application/json'}),'render_manifest.json'),600);
+  setTimeout(()=>downloadBlob(new Blob([scripts.sh],{type:'text/x-shellscript'}),'render_ffmpeg.sh'),900);
+  setTimeout(()=>downloadBlob(new Blob([scripts.bat],{type:'text/plain'}),'render_ffmpeg.bat'),1200);
+  setTimeout(()=>downloadBlob(new Blob([exportLogLines.join('\n')+'\n'],{type:'text/plain'}),'Voxel_Audio_Render_Kit_Log.txt'),1500);
+}
+
+function formatBytes(bytes){
+  if(!Number.isFinite(bytes))return '0 B';
+  const units=['B','KB','MB','GB'];
+  let n=bytes,u=0;
+  while(n>=1024&&u<units.length-1){n/=1024;u++}
+  return (u?n.toFixed(1):Math.round(n))+' '+units[u];
+}
+
+function openSessionExportVault(force=false){
+  if(!exportHistoryPanel)return;
+  exportHistoryPanel.classList.add('active');
+  if(force && !sessionExportHistory.length){
+    exportHistoryList.innerHTML='<div class="small">No completed browser Record exports yet. Run 10s Record or Record Full after selecting a song and binding an image.</div>';
+    exportHistoryCount.textContent='0/9';
+  }
+  showBootDiag(sessionExportHistory.length?('Session Export Vault: '+sessionExportHistory.length+' saved export(s).'):'Session Export Vault is empty until a browser Record completes.');
+}
+function closeSessionExportVault(){
+  if(exportHistoryPanel)exportHistoryPanel.classList.remove('active');
+}
+
+function captureCurrentExportMeta(tr,type){
+  return {
+    trackId:tr&&tr.id||null,
+    type:type||'browser-record',
+    title:getExportTitle(tr),
+    artist:getExportArtist(),
+    feat:getExportFeat(),
+    description:getExportDescription(),
+    color:getTrackExportColor(tr),
+    adminName:getAdminName(),
+    adminNoWatermarkUnlocked:adminWatermarkUnlocked,
+    maxSeconds:exportMaxSeconds
+  };
+}
+function applyVaultMetaToInputs(meta){
+  if(!meta)return;
+  if(meta.title&&exportTitleInput)exportTitleInput.value=meta.title;
+  if(exportArtistInput)exportArtistInput.value=meta.artist||'';
+  if(exportFeatInput)exportFeatInput.value=meta.feat||'';
+  if(exportDescriptionInput)exportDescriptionInput.value=meta.description||'';
+  if(meta.color)setSingleExportColor(meta.color,true);
+  if(meta.adminName&&adminNameInput)adminNameInput.value=meta.adminName;
+}
+function updateVaultItemMeta(id,field,value){
+  const item=sessionExportHistory.find(x=>x.id===id);
+  if(!item)return;
+  item.meta=item.meta||{};
+  item.meta[field]=value;
+  if(field==='color')item.meta.color=value;
+}
+async function reExportVaultItem(id){
+  const item=sessionExportHistory.find(x=>x.id===id);
+  if(!item){showBootDiag('Vault item not found.',true);return}
+  const meta=item.meta||{};
+  const tr=objectById(meta.trackId)||currentTrack||objectById(focusedObjectId);
+  if(!tr||!tr.file){
+    openSessionExportVault(true);
+    showBootDiag('Re-export blocked: original audio track is not loaded in this session.',true);
+    setExportReason('Re-export blocked.','The original audio track is not loaded anymore. Re-load the folder, select/bind the track, then re-export.');
+    validatorState.textContent='REEXPORT_NEEDS_TRACK';
+    return;
+  }
+  currentTrack=tr;
+  focusedObjectId=tr.id;
+  focusedFolder=tr.folder;
+  setAccentFromTrack(tr);
+  syncExportAccentFromTrack(tr);
+  applyVaultMetaToInputs(meta);
+  renderLists();
+  updatePathBar();
+  updateFloatingImage();
+
+  if(!trackHasBoundImage(tr)){
+    openSessionExportVault(true);
+    showBootDiag('Re-export blocked: this track needs a linked image.',true);
+    setExportReason('Re-export blocked: image required.','Rebind/drop artwork for the selected song first, then press Re-export again.');
+    validatorState.textContent='REEXPORT_NEEDS_IMAGE';
+    return;
+  }
+  if(!getExportArtist()){
+    openSessionExportVault(true);
+    showBootDiag('Re-export blocked: Artist name required, max 36 characters.',true);
+    setExportReason('Re-export blocked: artist required.','Enter an Artist name in the vault item or export panel before re-exporting.');
+    validatorState.textContent='REEXPORT_NEEDS_ARTIST';
+    return;
+  }
+
+  const seconds=meta.maxSeconds||item.type==='browser-record-test'?10:null;
+  showBootDiag('Re-exporting vault item with edited metadata...');
+  validatorState.textContent='REEXPORT_STARTED';
+  await startFullVideoExport(seconds);
+}
+function addSessionExport(blob,filename,type='browser-record',meta=null){
+  if(!blob||!blob.size)return;
+  const item={id:'exp_'+Date.now()+'_'+Math.random().toString(16).slice(2),blob,filename,type,createdAt:new Date(),meta:meta||captureCurrentExportMeta(currentTrack,type)};
+  sessionExportHistory.unshift(item);
+  while(sessionExportHistory.length>9)sessionExportHistory.pop();
+  renderSessionExportHistory();
+  openSessionExportVault();
+  pushExportLog('session export stored',{filename,bytes:blob.size,count:sessionExportHistory.length});
+}
+function downloadSessionExport(id){
+  const item=sessionExportHistory.find(x=>x.id===id);
+  if(!item)return;
+  const url=URL.createObjectURL(item.blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=item.filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1500);
+}
+function renderSessionExportHistory(){
+  if(!exportHistoryPanel||!exportHistoryList)return;
+  if(sessionExportHistory.length>0)exportHistoryPanel.classList.add('active');
+  exportHistoryCount.textContent=sessionExportHistory.length+'/9';
+  exportHistoryList.innerHTML='';
+  if(!sessionExportHistory.length){
+    exportHistoryList.innerHTML='<div class="small">No completed browser Record exports yet. Run 10s Record or Record Full after selecting a song and binding an image.</div>';
+    return;
+  }
+  const frag=document.createDocumentFragment();
+  sessionExportHistory.forEach(item=>{
+    item.meta=item.meta||{};
+    const row=document.createElement('div');
+    row.className='exportHistoryItem';
+    row.style.display='block';
+    const safeTitle=(item.meta.title||item.filename||'').replace(/"/g,'&quot;');
+    const safeArtist=(item.meta.artist||'').replace(/"/g,'&quot;');
+    const safeFeat=(item.meta.feat||'').replace(/"/g,'&quot;');
+    const safeDesc=(item.meta.description||'').replace(/"/g,'&quot;');
+    const safeColor=item.meta.color||'#28e7ff';
+    row.innerHTML='<div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start">'+
+      '<div><div class="exportHistoryName" title="'+item.filename+'">'+item.filename+'</div>'+
+      '<div class="exportHistoryMeta">'+item.type+' • '+formatBytes(item.blob.size)+' • '+item.createdAt.toLocaleTimeString()+'</div></div>'+
+      '<div class="exportHistoryActions"><button class="miniBtn" data-dl="'+item.id+'">Download</button><button class="miniBtn" data-rex="'+item.id+'">Re-export</button></div></div>'+
+      '<div class="exportHistoryEdit">'+
+      '<input data-vault="'+item.id+'" data-field="title" value="'+safeTitle+'" placeholder="Song name"/>'+
+      '<input data-vault="'+item.id+'" data-field="artist" maxlength="36" value="'+safeArtist+'" placeholder="Artist max 36"/>'+
+      '<input data-vault="'+item.id+'" data-field="feat" maxlength="36" value="'+safeFeat+'" placeholder="Feat"/>'+
+      '<input data-vault="'+item.id+'" data-field="description" value="'+safeDesc+'" placeholder="Description"/>'+
+      '<input data-vault="'+item.id+'" data-field="color" type="color" value="'+safeColor+'"/>'+
+      '</div>';
+    frag.appendChild(row);
+  });
+  exportHistoryList.appendChild(frag);
+  exportHistoryList.querySelectorAll('[data-dl]').forEach(btn=>btn.onclick=()=>downloadSessionExport(btn.dataset.dl));
+  exportHistoryList.querySelectorAll('[data-rex]').forEach(btn=>btn.onclick=()=>reExportVaultItem(btn.dataset.rex));
+  exportHistoryList.querySelectorAll('[data-vault]').forEach(inp=>{
+    inp.oninput=()=>updateVaultItemMeta(inp.dataset.vault,inp.dataset.field,inp.value);
+    inp.onchange=()=>updateVaultItemMeta(inp.dataset.vault,inp.dataset.field,inp.value);
+  });
+}
+async function startFullVideoExport(maxSeconds=null){if(exporting)return;exportMaxSeconds=maxSeconds;const tr=requireSelectedTrackImage(maxSeconds?'10s Record':'Record Full');if(!tr)return;exportPanel.classList.add('active');resetExportRunLog(tr);prepareExportTitle(tr);resetExportSmoothingForTrack(null);if(!window.MediaRecorder){setExportReason('MediaRecorder is not available in this browser.','Use current Chrome, Edge, or Safari. Firefox/older Safari may not support the needed video/audio recording path.');alert('This browser does not support MediaRecorder. Use a current Chrome/Edge/Safari browser.');return}exporting=true;exportCancel=false;exportChunks=[];exportPanel.classList.add('active');exportState.textContent='preparing';exportInfo.textContent='Preparing '+(maxSeconds?maxSeconds+' second test':'full-track')+' video export for: '+tr.name;exportFill.style.width='0%';validatorState.textContent='EXPORT_PREPARING';try{pushExportLog('creating audio graph');ensureAudioGraph();pushExportLog('audio graph ready',{state:audioContext.state});if(audioContext.state==='suspended'){pushExportLog('resuming audio context');await audioContext.resume();pushExportLog('audio context resumed',{state:audioContext.state});}if(currentUrl)URL.revokeObjectURL(currentUrl);currentUrl=URL.createObjectURL(tr.file);audio.src=currentUrl;audio.currentTime=0;audio.playbackRate=1;pushExportLog('audio src assigned',{name:tr.name,type:tr.file.type,size:tr.file.size});currentTrack=tr;focusedObjectId=tr.id;focusedFolder=tr.folder;updateFloatingImage();renderLists();updatePathBar();const img=await loadImageElement(tr.image);pushExportLog('cover image loaded',{hasImage:!!img});exportCanvas=document.createElement('canvas');exportCanvas.width=1280;exportCanvas.height=720;exportCtx=exportCanvas.getContext('2d',{alpha:false});pushExportLog('export canvas ready',{width:1280,height:720,fps:60});const videoStream=exportCanvas.captureStream(60);pushExportLog('canvas capture stream',{videoTracks:videoStream.getVideoTracks().length});const audioCapture=getReliableExportAudioStream();if(!audioCapture||!audioCapture.getAudioTracks().length)throw new Error('Audio export stream unavailable. Try Chrome/Edge and press Play once before Export.');const exportFormat=pickExportMime();exportMime=exportFormat.mime||'video/webm';exportInfo.textContent='Recording '+exportFormat.label+' '+(maxSeconds?maxSeconds+'s test':'full-track')+' export for: '+tr.name;pushExportLog('chosen export format',exportFormat);const mixed=new MediaStream([...videoStream.getVideoTracks(),...audioCapture.getAudioTracks()]);const recorderOptions={videoBitsPerSecond:6500000,audioBitsPerSecond:192000};if(exportFormat.mime)recorderOptions.mimeType=exportFormat.mime;exportRecorder=new MediaRecorder(mixed,recorderOptions);pushExportLog('media recorder created',{mimeType:exportRecorder.mimeType,state:exportRecorder.state,videoTracks:mixed.getVideoTracks().length,audioTracks:mixed.getAudioTracks().length});exportRecorder.ondataavailable=e=>{if(e.data&&e.data.size){exportChunks.push(e.data);pushExportLog('recorder chunk',{bytes:e.data.size,totalChunks:exportChunks.length})}};exportRecorder.onerror=e=>{const msg=(e&&e.error&&e.error.message)||e.message||'MediaRecorder error';setExportReason('MediaRecorder error.',msg);pushExportLog('recorder error',{name:e&&e.error&&e.error.name,message:msg});validatorState.textContent='EXPORT_FAILED'};exportRecorder.onstart=()=>pushExportLog('recorder started',{mimeType:exportRecorder.mimeType});exportRecorder.onstop=()=>{pushExportLog('recorder stopped',{chunks:exportChunks.length});videoStream.getTracks().forEach(t=>t.stop());mixed.getTracks().forEach(t=>t.stop());exportRaf&&cancelAnimationFrame(exportRaf);audio.playbackRate=1;if(exportCancel){exportState.textContent='cancelled';exportInfo.textContent='Export cancelled.';validatorState.textContent='EXPORT_CANCELLED';setTimeout(()=>exportPanel.classList.remove('active'),1200);exporting=false;return}const outType=exportRecorder&&exportRecorder.mimeType?exportRecorder.mimeType:exportMime;const ext=(outType||'').includes('mp4')?'mp4':'webm';const blob=new Blob(exportChunks,{type:outType||'video/webm'});pushExportLog('blob assembled',{bytes:blob.size,type:blob.type,ext});if(!blob.size){setExportReason('Export produced a zero-byte video.','The recorder stopped without producing data chunks. Try WebM in Chrome/Edge or shorten the test track.');validatorState.textContent='EXPORT_FAILED';exporting=false;return}const filename=getExportTitle(tr).replace(/[^\w\-]+/g,'_').slice(0,80)+(maxSeconds?'_10s_Test':'')+'_Voxel_Audio_Visualizer.'+ext;addSessionExport(blob,filename,maxSeconds?'browser-record-test':'browser-record-full',captureCurrentExportMeta(tr,maxSeconds?'browser-record-test':'browser-record-full'));const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);exportState.textContent='complete';exportInfo.textContent='Downloaded full visualizer video: '+filename+' — also saved in Session Export Vault.';setExportReason('Export completed successfully.','Saved '+filename+' ('+Math.round(blob.size/1024/1024*10)/10+' MB). It is also kept in the Session Export Vault until this page is closed/reloaded.');exportFill.style.width='100%';validatorState.textContent='EXPORT_COMPLETE';exporting=false};const tick=async()=>{if(!exporting)return;await renderExportVideoFrame(exportCtx,exportCanvas,img,tr,exportStartWall);const pct=(audio.duration&&isFinite(audio.duration))?Math.min(100,audio.currentTime/audio.duration*100):0;exportFill.style.width=pct.toFixed(2)+'%';exportState.textContent=exportCancel?'cancelling':('exporting '+Math.floor(pct)+'%');if(maxSeconds&&audio.currentTime>=maxSeconds){pushExportLog('test export duration reached',{maxSeconds});try{audio.pause()}catch(e){} if(exportRecorder&&exportRecorder.state!=='inactive')exportRecorder.stop();return}if(exportCancel){try{audio.pause()}catch(e){} if(exportRecorder&&exportRecorder.state!=='inactive')exportRecorder.stop();return}exportRaf=requestAnimationFrame(tick)};exportRecorder.start(1000);exportStartWall=performance.now();pushExportLog('starting playback for recording',{maxSeconds:maxSeconds||'full',recordSpeed:'1x-normal'});await audio.play();pushExportLog('playback started',{duration:audio.duration,currentTime:audio.currentTime});playBtn.textContent='Pause';validatorState.textContent='EXPORT_RECORDING';setExportReason('Recording in progress.','Browser Record is running at normal 1x song speed. Use Build MP4 Kit when you want faster-than-realtime final MP4 rendering without changing the audio speed. If recording fails, the exact exception and browser codec support will appear here and in the downloadable log.');tick();audio.onended=()=>{playBtn.textContent='Play';validatorState.textContent=exporting?'EXPORT_FINALIZING':'ENDED';if(exporting&&exportRecorder&&exportRecorder.state!=='inactive')setTimeout(()=>exportRecorder.stop(),250)}}catch(err){console.error(err);const msg=String(err&&err.message||err);pushExportLog('fatal export exception',{message:msg,stack:err&&err.stack});setExportReason('Export failed.',msg);exportState.textContent='failed';exportInfo.textContent=msg;validatorState.textContent='EXPORT_FAILED';audio.playbackRate=1;exporting=false}}
+function cancelExport(){if(!exporting)return;audio.playbackRate=1;exportCancel=true;exportState.textContent='cancelling';validatorState.textContent='EXPORT_CANCELLING';try{audio.pause()}catch(e){}if(exportRecorder&&exportRecorder.state!=='inactive')exportRecorder.stop()}
+
+
+const DOC_ROUTES={
+overview:{title:'Overview',html:`<p><strong>Voxel Audio</strong> turns a local audio folder into a playable voxel directory, lets you bind artwork to tracks, preview the final visualizer layout, and export release-ready assets.</p><span class="docsRouteBadge">local-first</span><span class="docsRouteBadge">audio folder</span><span class="docsRouteBadge">visualizer</span><span class="docsRouteBadge">mp4 kit</span><h3>Core doctrine</h3><ul><li>Local browser app: no uploads.</li><li>Every playable audio file becomes a voxel.</li><li>Search only shows valid matching tracks.</li><li>Final release output should use the deterministic FFmpeg MP4 Kit.</li><li>Browser Record remains as a convenience preview path.</li></ul>`},
+local:{title:'No-Server Local Mode',html:`<p>Voxel Audio is designed to run locally by double-clicking <code>index.html</code>. No backend, install, upload, or account is required.</p><ul><li>Folder picker and drag/drop use browser File APIs.</li><li>Audio playback uses the local HTML audio element and Web Audio analyser.</li><li>Browser Record uses local MediaRecorder APIs.</li><li>Build MP4 Kit downloads local FFmpeg scripts and source files for deterministic offline rendering.</li></ul><h3>Best local usage</h3><ol><li>Double-click <code>index.html</code>.</li><li>If a browser blocks folder drag/drop quirks, use the folder picker.</li><li>For final MP4, install FFmpeg and run the generated script locally.</li></ol>`},
+quickstart:{title:'Quick Start',html:`<ol><li>Click <code>Open Audio Folder</code> or drag/drop a folder anywhere.</li><li>Select a song from Browser Hub or click its voxel.</li><li>Click <code>Bind Image To Selected</code> or drag an image onto the selected voxel.</li><li>Click <code>Preview Export</code> to see the final 16:9 layout live.</li><li>Use <code>10s Record</code> for a normal-speed browser preview.</li><li>Use <code>Build MP4 Kit</code> for final release MP4 rendering.</li></ol>`},
+controls:{title:'Controls',html:`<ul><li><code>Open Audio Folder</code>: pick a folder of audio files.</li><li><code>Search</code>: filters valid audio voxels and list rows.</li><li><code>Bind Image To Selected</code>: attaches artwork to the selected/current song.</li><li><code>Play</code>: plays current/selected track.</li><li><code>Back</code>: clears selected audio/folder focus by one level.</li><li><code>Reset</code>: returns to root folder view.</li><li><code>Recenter</code>: fits visible voxels back into view.</li><li><code>Quality</code>: Eco / Auto / High renderer caps.</li><li><code>Preview Export</code>: live final-layout preview; requires selected song + bound artwork.</li><li><code>Build MP4 Kit</code>: deterministic FFmpeg package; requires selected song + original bound artwork file.</li><li><code>Hub</code>: clean-mode toggle.</li></ul>`},
+folder:{title:'Folder Loading',html:`<p>Voxel Audio supports folder picker loading and drag/drop folder loading.</p><ul><li>Accepted extensions: <code>mp3</code>, <code>wav</code>, <code>ogg</code>, <code>m4a</code>, <code>aac</code>, <code>flac</code>, <code>opus</code>, <code>webm</code>.</li><li>Every valid file becomes a voxel and a Browser Hub row.</li><li>Nested folder paths are preserved for routing/search.</li><li>After load, the scene auto-fits and runs a delayed second fit.</li></ul>`},
+search:{title:'Search',html:`<p>Search filters the valid audio set live.</p><ul><li>Matches filename, folder path, extension, group, and kind.</li><li>Hidden/non-matching tracks are removed from the voxel render and Browser Hub.</li><li>The footer shows current valid count.</li><li>If the scene appears blank, clear Search or click Recenter.</li></ul>`},
+binding:{title:'Image Binding',html:`<p>Artwork can be attached per song.</p><ul><li>Select/play a track, then choose <code>Bind Image To Selected</code>.</li><li>Drag an image directly onto a voxel to bind to that track.</li><li>The live floating image reacts to audio.</li><li>The export preview and record renderer use the bound image.</li><li>The MP4 Kit downloads the original bound image file as the cover source.</li></ul>`},
+preview:{title:'Live Export Preview',html:`<p><code>Preview Export</code> opens a scaled 1280×720 canvas using the same renderer as browser recording.</p><ul><li>Requires selected audio + bound image.</li><li>Uses the selected voxel RGB color.</li><li>Uses editable Song name.</li><li>Updates live while audio plays.</li><li>Click <code>Play Preview</code> if audio is paused.</li></ul>`},
+record:{title:'Browser Record',html:`<p>Browser Record is a no-server local recording feature for quick visual exports and previews. It runs entirely in your browser and records at normal 1x song speed.</p><ul><li><code>10s Record</code>: records 10 seconds at normal 1x song speed.</li><li><code>Record Full</code>: records the full song at normal 1x song speed, but is blocked until the selected song has bound artwork.</li><li><code>Record: Auto / MP4 / WebM</code>: preference only; browser support decides final availability.</li><li><strong>Session Export Vault</strong>: keeps the last 9 browser Record exports with Download buttons until you close/reload the page.</li><li>If recording fails, use Download Run Log and switch to MP4 Kit for final output.</li></ul>`},
+kit:{title:'MP4 Kit',html:`<p><code>Build MP4 Kit</code> is the professional release path.</p><ul><li>Downloads audio source, cover image, manifest, shell script, batch script, and run log.</li><li>Final video is rendered with FFmpeg as H.264/AAC MP4.</li><li><code>Kit: Fast / Turbo / Quality</code> changes encode speed/quality, not song speed.</li></ul><pre>macOS/Linux:
+chmod +x render_ffmpeg.sh
+./render_ffmpeg.sh
+
+Windows:
+render_ffmpeg.bat</pre>`},
+layout:{title:'Layout / Panels',html:`<ul><li>Browser Hub height is clamped to match the left status panel.</li><li>Track list scrolls internally so it cannot overlap the wave player.</li><li>Clean Hub mode hides nonessential panels while keeping folder/search/hub controls.</li><li>Recenter fits the current visible voxel set into the safe viewport.</li></ul>`},
+nothingworks:{title:'Nothing Works / Local Fixes',html:`<p>If buttons appear hidden or a local browser blocks a picker, use the fixed Quick Dock on the upper-right: <code>＋ Folder</code>, <code>＋ Image</code>, <code>ⓘ Info</code>, <code>Preview</code>, <code>Record</code>, <code>MP4 Kit</code>, and <code>Album</code>.</p><h3>Checklist</h3><ul><li>Use <code>＋ Folder</code> if the top Open Audio Folder button is offscreen.</li><li>Use <code>＋ Image</code> after selecting a track.</li><li>Clear Search if the scene is blank.</li><li>Click Recenter.</li><li>Try Chrome or Edge for Browser Record.</li><li>Use Build MP4 Kit if Browser Record fails.</li></ul><p>The small startup message reports missing APIs or missing controls.</p>`},
+troubleshoot:{title:'Troubleshooting',html:`<h3>Blank scene</h3><ul><li>Clear Search.</li><li>Click Recenter.</li><li>Switch Quality to Eco/Auto.</li><li>Check Browser Hub count.</li></ul><h3>Preview does not open</h3><ul><li>Select a song.</li><li>Bind an image.</li></ul><h3>Browser Record fails</h3><ul><li>Check the Session Export Vault if the browser download prompt was missed.</li><li>Download Run Log.</li><li>Try WebM mode.</li><li>Use Build MP4 Kit for final output.</li></ul><h3>MP4 Kit fails</h3><ul><li>Make sure all kit files are in one folder.</li><li>Install FFmpeg.</li><li>Run the script from terminal to see FFmpeg errors.</li></ul>`},
+album:{title:'Album Route Builder',html:`<p>Album Route Builder is active in this build. It can collect tracks from selected song, visible/search results, current folder, or all loaded tracks, regardless of which folder route they came from.</p><ul><li>Open <code>Album Route</code>.</li><li>Add selected, visible/search, current folder, or all loaded.</li><li>Set an album title and route name.</li><li>Bind per-track covers or set the current image as fallback cover.</li><li>Click <code>Build Full Album Kit</code>.</li><li>Run <code>render_album_ffmpeg.sh</code> or <code>render_album_ffmpeg.bat</code>.</li></ul><p>Each track uses its own voxel RGB color by default, but Album Route lets you override per-track colors or apply one color to the whole album.</p>`},
+bindingmaps:{title:'Binding Maps',html:`<p>Export Bindings downloads a JSON map of track path, title, color, and image filename metadata. Import Bindings matches loaded tracks by path/name and restores metadata where possible.</p><p>Browser security may require rebinding actual image files because pages cannot silently reload arbitrary local file blobs.</p>`},
+watermark:{title:'Watermark Policy',html:`<p>The local/free Browser Record path includes a visible Voxel Audio watermark scaffold.</p><ul><li>Free: watermarked browser Record exports, 5/week once accounts exist.</li><li>$3 USD/month: 99 server FFmpeg exports/month.</li><li>$7 USD/month: unlimited no-watermark Record + server FFmpeg exports.</li></ul><p>Account entitlement checks will control watermark removal later.</p>`},
+pro:{title:'Pricing / Accounts Plan',html:`<p><strong>Voxel Audio</strong> is planned as a 3-tier USD export model once Google OAuth, Stripe, and server FFmpeg rendering are connected.</p><h3>Free account</h3><ul><li><strong>$0 USD</strong></li><li>Browser Record exports</li><li>Watermark on free exports</li><li>5 exports/week once accounts are released</li><li>Local folder playback, search, image binding, and preview remain available</li></ul><h3>Server FFmpeg tier</h3><ul><li><strong>$3 USD/month</strong></li><li>99 server FFmpeg exports/month</li><li>Server-side MP4 rendering powered by FFmpeg</li><li>Google OAuth login planned</li><li>Stripe subscription integration planned</li></ul><h3>Unlimited Creator tier</h3><ul><li><strong>$7 USD/month</strong></li><li>Unlimited no-watermark browser Record exports</li><li>Unlimited no-watermark server FFmpeg exports</li><li>Best fit for creators releasing visualizers regularly</li></ul><p>Until the server/account layer is built, the no-server local build remains the baseline app.</p>`},
+release:{title:'Release Notes',html:`<ul><li>Live Export Preview added.</li><li>Export waveform smoothing added for less choppy visual motion.</li><li>Panel fit and Recenter added.</li><li>Song name export input added.</li><li>Voxel RGB color drives export accent color and app accent color when a song is selected.</li><li>Album Route Builder added for full-album FFmpeg kit export.</li><li>FFmpeg MP4 Kit is the final-output route.</li><li>Browser Record stays normal 1x song speed.</li></ul>`}
+};
+function openDocs(route='overview'){
+  docsOverlay.classList.add('active');
+  renderDocsRoute(route);
+}
+function closeDocs(){
+  docsOverlay.classList.remove('active');
+}
+function renderDocsRoute(route){
+  const data=DOC_ROUTES[route]||DOC_ROUTES.overview;
+  docsContent.innerHTML='<h2>'+data.title+'</h2>'+data.html;
+  docsContent.scrollTop=0;
+  document.querySelectorAll('.docsNav button').forEach(btn=>btn.classList.toggle('active',btn.dataset.route===route));
+}
+document.querySelectorAll('.docsNav button').forEach(btn=>btn.onclick=()=>renderDocsRoute(btn.dataset.route));
+async function openExportPreview(){
+  const tr=requireSelectedTrackImage('Preview Export');
+  if(!tr)return;
+  exportPanel.classList.add('active');
+  prepareExportTitle(tr);
+  previewPanel.classList.add('active');
+  previewActive=true;
+  previewCtx=previewCanvas.getContext('2d',{alpha:false});
+  previewImage=await loadImageElement(tr.image);
+  previewState.textContent='previewing '+getExportTitle(tr);
+  setExportReason('Live export preview opened.','This shows the final 1280×720 export layout while audio plays. Edit Song name, Artist, Feat, or Description anytime to see it update. Leave Description blank for a compact visualizer capsule.');
+  validatorState.textContent='PREVIEW_OPEN';
+  if(!audio.src || currentTrack?.id!==tr.id){
+    currentTrack=tr;focusedObjectId=tr.id;focusedFolder=tr.folder;setAccentFromTrack(tr);syncExportAccentFromTrack(tr);refreshVisible();updateFloatingImage();renderLists();updatePathBar();
+  }
+  previewLoop();
+}
+async function playPreviewTrack(){
+  const tr=getSelectedPlayableTrack();
+  if(!tr||!tr.file){setExportReason('Preview play needs a selected audio file.');return}
+  if(!audio.src || currentTrack?.id!==tr.id){
+    await playTrack(tr.id);
+  }else if(audio.paused){
+    ensureAudioGraph();
+    if(audioContext.state==='suspended')await audioContext.resume();
+    await audio.play();
+    playBtn.textContent='Pause';
+  }
+  previewState.textContent='playing preview: '+getExportTitle(tr);
+}
+function closeExportPreview(){
+  previewActive=false;
+  if(previewRaf)cancelAnimationFrame(previewRaf);
+  previewPanel.classList.remove('active');
+  previewState.textContent='closed';
+  validatorState.textContent='PREVIEW_CLOSED';
+}
+function previewLoop(){
+  if(!previewActive)return;
+  const tr=currentTrack||getSelectedPlayableTrack();
+  if(previewCtx&&tr){
+    renderExportVideoFrame(previewCtx,previewCanvas,previewImage,tr,performance.now());
+  }
+  previewRaf=requestAnimationFrame(previewLoop);
+}
+
+function safeBindControls(){
+  const bind=(el,fn,name)=>{if(el){el.onclick=fn}else showBootDiag('Optional control missing: '+name)};
+  bind(dockOpenBtn,()=>safeClickInput(folderInput,'Open Audio Folder'),'dockOpenBtn');
+  bind(dockBindBtn,()=>safeClickInput(imageInput,'Bind Image'),'dockBindBtn');
+  bind(dockInfoBtn,()=>openDocs('overview'),'dockInfoBtn');
+  if(typeof dockEngineBtn!=='undefined'&&dockEngineBtn) dockEngineBtn.onclick=()=>openDocs('engine');
+  bind(dockPreviewBtn,openExportPreview,'dockPreviewBtn');
+  bind(dockRecordBtn,()=>startFullVideoExport(null),'dockRecordBtn');
+  bind(dockKitBtn,buildDeterministicRenderKit,'dockKitBtn');
+  bind(dockAlbumBtn,openAlbumRoute,'dockAlbumBtn');
+  bind(dockExportBindingsBtn,exportBindingMap,'dockExportBindingsBtn');
+  if(bindingInput)bindingInput.onchange=()=>importBindingMapFile(bindingInput.files&&bindingInput.files[0]);
+  if(exportBindingsBtn)exportBindingsBtn.onclick=exportBindingMap;
+}
+
+function setHubVisible(next){hubVisible=next;document.body.classList.toggle('hub-clean',!hubVisible);rightPanel.classList.toggle('hidden',!hubVisible);if(!hubVisible){hoverCard.style.display='none';dropHint.classList.remove('hot')}document.getElementById('hubToggleBtn').textContent='Hub: '+(hubVisible?'Visible':'Hidden');document.getElementById('hubFooter').textContent='hub='+(hubVisible?'visible':'hidden')}
+document.addEventListener('dragover',e=>{if(dropHasDirectory(e)){e.preventDefault();dropHint.classList.add('hot')}},true);document.addEventListener('drop',async e=>{if(!dropHasDirectory(e))return;e.preventDefault();e.stopImmediatePropagation();await loadDroppedFolder(e)},true);document.addEventListener('dragleave',e=>{if(e.target===document.documentElement||e.target===document.body)dropHint.classList.remove('hot')},true);
+searchInput.oninput=()=>{searchQuery=searchInput.value;hovered=null;refreshVisible();renderLists();updatePathBar();updateStatus(true)};
+document.getElementById('resetBtn').onclick=()=>{focusedFolder=null;focusedObjectId=null;refreshVisible();fitView();renderLists();updatePathBar();updateStatus(true)};document.getElementById('recenterBtn').onclick=()=>{fitView();validatorState.textContent='RECENTERED';updateStatus(true)};document.getElementById('backBtn').onclick=()=>{if(focusedObjectId)focusedObjectId=null;else focusedFolder=null;refreshVisible();renderLists();updatePathBar();updateStatus(true)};document.getElementById('applySeedBtn').onclick=()=>{const n=(seedInput.value||'').trim().toUpperCase();if(n){seedHex=n;rebuild()}};document.getElementById('randomSeedBtn').onclick=()=>{seedHex=randomHexSeed();rebuild()};mainViewBtn.onclick=()=>{mainView=mainView==='icon'?'web':'icon';mainViewBtn.textContent='Current View: '+(mainView==='icon'?'Voxel Icon':'Web Node');viewFooter.textContent='view='+mainView;fitView()};themeBtn.onclick=()=>{theme=theme==='dark'?'light':'dark';themeBtn.textContent='Theme: '+(theme==='dark'?'Dark':'Light')};qualityBtn.onclick=()=>{const order=['eco','auto','high'];setQuality(order[(order.indexOf(qualityMode)+1)%order.length]);rebuild()};safeBindControls();exportBtn.onclick=buildDeterministicRenderKit;infoBtn.onclick=()=>openDocs('overview');albumRouteBtn.onclick=openAlbumRoute;closeAlbumBtn.onclick=closeAlbumRoute;albumAddSelectedBtn.onclick=()=>{const tr=currentTrack||objectById(focusedObjectId);if(tr)uniquePushAlbum([tr.id]);else albumReason.textContent='No selected track.'};albumAddVisibleBtn.onclick=()=>uniquePushAlbum(visibleCache.map(o=>o.id));albumAddFolderBtn.onclick=addCurrentFolderToAlbum;albumAddAllBtn.onclick=()=>uniquePushAlbum(objects.filter(o=>o.file).map(o=>o.id));albumClearBtn.onclick=()=>{albumRouteIds=[];renderAlbumRoute()};albumUseCurrentImageBtn.onclick=useCurrentImageAsAlbumFallback;albumApplyColorAllBtn.onclick=applyAlbumColorToAll;albumResetColorsBtn.onclick=resetAlbumColors;albumBuildBtn.onclick=buildAlbumKit;closeDocsBtn.onclick=closeDocs;docsOverlay.addEventListener('click',e=>{if(e.target===docsOverlay)closeDocs()});previewExportBtn.onclick=openExportPreview;previewPlayBtn.onclick=playPreviewTrack;closePreviewBtn.onclick=closeExportPreview;recordExportBtn.onclick=()=>startFullVideoExport(null);testExportBtn.onclick=()=>startFullVideoExport(10);formatBtn.onclick=cycleExportFormat;kitSpeedBtn.onclick=cycleKitSpeed;preflightBtn.onclick=()=>runExportPreflight(true);cancelExportBtn.onclick=cancelExport;downloadLogBtn.onclick=downloadRunLog;copyLogBtn.onclick=copyRunLog;document.getElementById('hubToggleBtn').onclick=()=>setHubVisible(!hubVisible);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAlbumRoute();closeDocs();closeExportPreview&&closeExportPreview()}});
+function frame(t){requestAnimationFrame(frame);if(t-lastFrame<1000/Q.fps)return;lastFrame=t;tNow=t;readAudio();mainView==='icon'?drawIconView():drawWebView();drawWave();updateStatus(false)}installAutoQuality();resize();rebuild();runStartupSelfTest();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
