@@ -1,4 +1,4 @@
-# Production Hardening Pass — v1.8.0
+# Production Hardening Pass — v1.8.16
 
 ## Goal
 

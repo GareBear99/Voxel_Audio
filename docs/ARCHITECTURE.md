@@ -81,7 +81,7 @@ Browser recording is inherently browser-dependent. FFmpeg output is deterministi
 The no-server build is a strong local creator tool. Account-backed pricing, server FFmpeg, Stripe, Google OAuth, and secure no-watermark entitlement enforcement are roadmap items, not local-build features.
 
 
-## v1.8.0 Production Renderer Notes
+## v1.8.16 Production Renderer Notes
 
 The runtime now uses four quality profiles:
 

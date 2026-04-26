@@ -1,6 +1,6 @@
 # Voxel Audio
 
-## Current release status — v1.8.0
+## Current release status — v1.8.16
 
 This package has been audited and aligned as a **low-weight local creator tool**:
 
@@ -15,7 +15,7 @@ This package has been audited and aligned as a **low-weight local creator tool**
 - Album Route Builder for multi-track render kits.
 - Lite / Eco / Auto / High performance ladder for older hardware.
 - Reset/Back button bindings corrected in v1.7.1 after audit.
-- Production hardening in v1.8.0: Lite mode, cached background render, hidden-tab pause, web-node draw caps, throttled artwork transforms, debounced resize, and automatic performance governor.
+- Production hardening in v1.8.16: Lite mode, cached background render, hidden-tab pause, web-node draw caps, throttled artwork transforms, debounced resize, and automatic performance governor.
 
 The no-server build is usable now. Google OAuth, Stripe, account quotas, and server FFmpeg rendering are roadmap systems, not active local-build features yet.
 
@@ -823,7 +823,7 @@ The issue was that the real audio-file branch played the track but skipped the c
 
 ---
 
-## v1.8.0 production documentation map
+## v1.8.16 production documentation map
 
 For the current audited and production-hardened package state, use these docs first:
 
@@ -835,7 +835,7 @@ For the current audited and production-hardened package state, use these docs fi
 | `docs/RELEASE_STATUS.md` | What is ready now vs. what is still roadmap. |
 | `docs/OPERATOR_MANUAL.md` | Straight usage manual for loading, binding, previewing, recording, vault, and FFmpeg kit workflow. |
 | `docs/ARCHITECTURE.md` | Runtime layer map and quality ladder. |
-| `docs/PRODUCTION_HARDENING_PASS.md` | v1.8.0 runtime hardening details and remaining SaaS blockers. |
+| `docs/PRODUCTION_HARDENING_PASS.md` | v1.8.16 runtime hardening details and remaining SaaS blockers. |
 | `docs/RESET_AND_BACK_BEHAVIOR.md` | Correct Reset/Back behavior after v1.7.1 binding fix. |
 
 

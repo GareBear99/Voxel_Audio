@@ -52,6 +52,6 @@ Single-track Preview, Record, and MP4 Kit require:
 Browser Record is useful for previews. FFmpeg Kit is the cleaner final-release path because it avoids browser codec and real-time capture problems.
 
 
-## v1.8.0 weak-hardware rule
+## v1.8.16 weak-hardware rule
 
 Use `Quality: Lite` when the render stutters, the folder is huge, or you are screen recording on an old Mac. The app may also downgrade quality automatically when the performance governor detects repeated frame-budget misses. This does not change exports, metadata, vault items, selected track, or image bindings.

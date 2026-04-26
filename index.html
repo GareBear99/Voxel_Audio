@@ -61,7 +61,7 @@ body:after{content:"";position:fixed;inset:0;z-index:2;pointer-events:none;backg
 #previewCanvas{position:relative;display:block;width:100%;height:auto;aspect-ratio:16/9;border-radius:14px;background:#05070d}
 .previewHint{margin-top:8px;color:#aeb8d8}
 body.hub-clean .previewPanel.active{display:block!important}
-.exportPanel{position:fixed;right:16px;bottom:176px;width:400px;z-index:31;padding:12px 14px;border-radius:16px;background:rgba(5,8,20,.92);border:1px solid color-mix(in srgb,var(--waveRgb) 55%,transparent);box-shadow:0 0 24px color-mix(in srgb,var(--waveRgb) 18%,transparent);backdrop-filter:blur(8px);display:none}
+.exportPanel{position:fixed;right:12px;bottom:176px;width:min(340px,calc(100vw - 24px));max-height:34vh;overflow:auto;z-index:27;padding:10px 12px;border-radius:16px;background:rgba(5,8,20,.92);border:1px solid color-mix(in srgb,var(--waveRgb) 55%,transparent);box-shadow:0 0 24px color-mix(in srgb,var(--waveRgb) 18%,transparent);backdrop-filter:blur(8px);display:none}
 .exportPanel.active{display:block}
 .exportPanel .exportTop{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
 .exportPanel .exportTitle{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#fff4d5}
@@ -148,7 +148,7 @@ body.hub-clean .bootDiag.active{display:block!important}
   <div class="btn" id="playBtn">Play</div><div class="btn" id="backBtn">Back</div><div class="btn" id="resetBtn">Reset</div><div class="btn" id="recenterBtn">Recenter</div>
   <div class="seedBox"><span class="small">Seed</span><input class="seedInput mono" id="seedInput" value="F1B49B1CB10D6FED"/></div>
   <div class="btn" id="applySeedBtn">Apply Seed</div><div class="btn" id="randomSeedBtn">Randomize</div>
-  <div class="btn" id="mainViewBtn">Current View: Voxel Icon</div><div class="btn" id="themeBtn">Theme: Dark</div><div class="btn" id="qualityBtn">Quality: Auto</div><div class="btn" id="preflightBtn">Preflight</div><div class="btn" id="previewExportBtn">Preview Export</div><div class="btn" id="albumRouteBtn">Album Route</div><div class="btn" id="kitSpeedBtn">Kit: Fast</div><div class="btn" id="formatBtn">Record: Auto</div><div class="btn" id="testExportBtn">10s Record</div><div class="btn" id="recordExportBtn">Record Full</div><div class="btn" id="exportBtn">Build MP4 Kit</div><div class="btn" id="infoBtn">ⓘ Info</div><div class="btn" id="hubToggleBtn">Hub: Visible</div>
+  <div class="btn" id="mainViewBtn">Current View: Voxel Icon</div><div class="btn" id="themeBtn">Theme: Dark</div><div class="btn" id="qualityBtn">Quality: Auto</div><div class="btn" id="preflightBtn">Preflight</div><div class="btn" id="previewExportBtn">Preview Export</div><div class="btn" id="albumRouteBtn">Album Route</div><div class="btn" id="kitSpeedBtn">Kit: Fast</div><div class="btn" id="formatBtn">Record: Auto</div><div class="btn" id="testExportBtn">10s Record</div><div class="btn" id="recordExportBtn">Record Full</div><div class="btn" id="chainExportBtn">Chain Test</div><div class="btn" id="exportBtn">Build MP4 Kit</div><div class="btn" id="infoBtn">ⓘ Info</div><div class="btn" id="hubToggleBtn">Hub: Visible</div>
   <label class="btn colorBox">Border <input id="borderColor" type="color" value="#bc7cff"/></label>
   <label class="btn colorBox">Wave <input id="waveColor" type="color" value="#28e7ff"/></label>
 <input id="bindingInput" type="file" accept="application/json,.json" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"/><button id="exportBindingsBtn" type="button" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">Export Bindings</button>
@@ -295,6 +295,14 @@ body.hub-clean .bootDiag.active{display:block!important}
 <div class="wavePanel"><div class="playerBar"><span class="small" id="timeRead">0:00</span><input id="seek" type="range" min="0" max="1000" value="0"/><span class="small" id="durRead">0:00</span></div><canvas id="waveCanvas"></canvas></div>
 <audio id="audio" crossorigin="anonymous"></audio>
 <script>
+/*
+  Voxel Audio v1.8.16 audit notes:
+  - Browser Record is a convenience path, not the final deterministic renderer.
+  - Final releases should still use Build MP4 Kit / FFmpeg when absolute compatibility matters.
+  - Browser Record now has two gates before saving: recorder-input audio energy and finished blob playback.
+  - Chain Test is diagnostic only; it should never require artist/image/folder input.
+  - Do not stop shared audio-element tracks during cleanup; only stop export-owned clones.
+*/
 (()=>{
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d',{alpha:false,desynchronized:true}),waveCanvas=document.getElementById('waveCanvas'),wctx=waveCanvas.getContext('2d',{alpha:false,desynchronized:true}),bootDiag=document.getElementById('bootDiag');
 const statusText=document.getElementById('statusText'),trackList=document.getElementById('trackList'),hoverCard=document.getElementById('hoverCard'),hoverTitle=document.getElementById('hoverTitle'),hoverGrid=document.getElementById('hoverGrid'),rightPanel=document.getElementById('rightPanel'),seedInput=document.getElementById('seedInput'),seedFooter=document.getElementById('seedFooter'),mainViewBtn=document.getElementById('mainViewBtn'),themeBtn=document.getElementById('themeBtn'),qualityBtn=document.getElementById('qualityBtn'),preflightBtn=document.getElementById('preflightBtn'),formatBtn=document.getElementById('formatBtn'),testExportBtn=document.getElementById('testExportBtn'),recordExportBtn=document.getElementById('recordExportBtn'),qualityFooter=document.getElementById('qualityFooter'),viewFooter=document.getElementById('viewFooter'),pathBar=document.getElementById('pathBar'),depthFooter=document.getElementById('depthFooter'),folderInput=document.getElementById('folderInput'),searchInput=document.getElementById('searchInput'),searchFooter=document.getElementById('searchFooter'),imageInput=document.getElementById('imageInput'),bindingInput=document.getElementById('bindingInput'),exportBindingsBtn=document.getElementById('exportBindingsBtn'),dockExportBindingsBtn=document.getElementById('dockExportBindingsBtn'),dockOpenBtn=document.getElementById('dockOpenBtn'),dockBindBtn=document.getElementById('dockBindBtn'),dockInfoBtn=document.getElementById('dockInfoBtn'),dockPreviewBtn=document.getElementById('dockPreviewBtn'),dockRecordBtn=document.getElementById('dockRecordBtn'),dockVaultBtn=document.getElementById('dockVaultBtn'),dockKitBtn=document.getElementById('dockKitBtn'),dockAlbumBtn=document.getElementById('dockAlbumBtn'),playBtn=document.getElementById('playBtn'),audio=document.getElementById('audio'),seek=document.getElementById('seek'),timeRead=document.getElementById('timeRead'),durRead=document.getElementById('durRead'),floatingImage=document.getElementById('floatingImage'),borderColor=document.getElementById('borderColor'),waveColor=document.getElementById('waveColor'),dropHint=document.getElementById('dropHint'),nowPlaying=document.getElementById('nowPlaying'),validatorState=document.getElementById('validatorState'),folderSummary=document.getElementById('folderSummary'),exportBtn=document.getElementById('exportBtn'),infoBtn=document.getElementById('infoBtn'),albumRouteBtn=document.getElementById('albumRouteBtn'),albumOverlay=document.getElementById('albumOverlay'),albumTitleInput=document.getElementById('albumTitleInput'),albumRouteInput=document.getElementById('albumRouteInput'),albumList=document.getElementById('albumList'),albumReason=document.getElementById('albumReason'),closeAlbumBtn=document.getElementById('closeAlbumBtn'),albumAddSelectedBtn=document.getElementById('albumAddSelectedBtn'),albumAddVisibleBtn=document.getElementById('albumAddVisibleBtn'),albumAddFolderBtn=document.getElementById('albumAddFolderBtn'),albumAddAllBtn=document.getElementById('albumAddAllBtn'),albumClearBtn=document.getElementById('albumClearBtn'),albumUseCurrentImageBtn=document.getElementById('albumUseCurrentImageBtn'),albumBuildBtn=document.getElementById('albumBuildBtn'),albumColorInput=document.getElementById('albumColorInput'),albumApplyColorAllBtn=document.getElementById('albumApplyColorAllBtn'),albumResetColorsBtn=document.getElementById('albumResetColorsBtn'),docsOverlay=document.getElementById('docsOverlay'),docsContent=document.getElementById('docsContent'),closeDocsBtn=document.getElementById('closeDocsBtn'),previewExportBtn=document.getElementById('previewExportBtn'),previewPanel=document.getElementById('previewPanel'),previewCanvas=document.getElementById('previewCanvas'),previewState=document.getElementById('previewState'),previewPlayBtn=document.getElementById('previewPlayBtn'),closePreviewBtn=document.getElementById('closePreviewBtn'),exportPanel=document.getElementById('exportPanel'),exportState=document.getElementById('exportState'),exportInfo=document.getElementById('exportInfo'),exportTitleInput=document.getElementById('exportTitleInput'),exportArtistInput=document.getElementById('exportArtistInput'),exportFeatInput=document.getElementById('exportFeatInput'),exportDescriptionInput=document.getElementById('exportDescriptionInput'),singleExportColorInput=document.getElementById('singleExportColorInput'),adminNameInput=document.getElementById('adminNameInput'),adminKeyInput=document.getElementById('adminKeyInput'),adminUnlockBtn=document.getElementById('adminUnlockBtn'),adminLockBtn=document.getElementById('adminLockBtn'),adminWatermarkState=document.getElementById('adminWatermarkState'),exportFill=document.getElementById('exportFill'),exportReason=document.getElementById('exportReason'),exportLog=document.getElementById('exportLog'),exportHistoryPanel=document.getElementById('exportHistoryPanel'),exportHistoryList=document.getElementById('exportHistoryList'),exportHistoryCount=document.getElementById('exportHistoryCount'),closeVaultBtn=document.getElementById('closeVaultBtn'),cancelExportBtn=document.getElementById('cancelExportBtn'),downloadLogBtn=document.getElementById('downloadLogBtn'),copyLogBtn=document.getElementById('copyLogBtn');
@@ -349,7 +357,7 @@ function exportBindingMap(){
       imageFileName:o.imageFile?o.imageFile.name:(o.importedBinding&&o.importedBinding.imageFileName)||null,
       imageBound:!!(o.imageFile||o.image)
     }));
-    downloadBlob(new Blob([JSON.stringify({app:'Voxel Audio',version:'1.8.1',createdAt:new Date().toISOString(),bindings:bound},null,2)],{type:'application/json'}),'voxel_audio_binding_map.json');
+    downloadBlob(new Blob([JSON.stringify({app:'Voxel Audio',version:'1.8.15',createdAt:new Date().toISOString(),bindings:bound},null,2)],{type:'application/json'}),'voxel_audio_binding_map.json');
     showBootDiag('Exported binding map for '+bound.length+' track(s).');
   }catch(err){showBootDiag('Export bindings failed: '+String(err.message||err),true)}
 }
@@ -381,7 +389,7 @@ function renderLists(){trackList.textContent='';const visible=visibleCache.lengt
 function updatePathBar(){pathBar.innerHTML='';const parts=['root'];if(focusedFolder)parts.push(focusedFolder);if(focusedObjectId){const o=objectById(focusedObjectId);if(o&&!focusedFolder)parts.push(o.folder);parts.push(labelOf(o?.path||focusedObjectId))}parts.forEach(p=>{const el=document.createElement('div');el.className='pathchip';el.textContent=p;pathBar.appendChild(el)});depthFooter.textContent='depth='+(focusedObjectId?'audio':focusedFolder?'folder':'root')}
 function objectById(id){return objectMap.get(id)||null}
 function hardStopAudio(){
-  try{audio.pause();audio.onended=defaultAudioEnded;audio.removeAttribute('src');audio.load()}catch(e){}
+  try{audio.pause();audio.removeAttribute('src');audio.load()}catch(e){}
   try{if(currentUrl)URL.revokeObjectURL(currentUrl)}catch(e){}
   currentUrl=null;
 }
@@ -539,8 +547,7 @@ function dropHasDirectory(e){return getDropEntries(e).some(entry=>entry.isDirect
 async function loadDroppedFolder(e){const entries=getDropEntries(e).filter(entry=>entry.isDirectory);if(!entries.length)return false;dropHint.classList.remove('hot');validatorState.textContent='SCANNING_DROPPED_FOLDER';const nested=await Promise.all(entries.map(entry=>entryToFiles(entry,'')));const files=nested.flat();loadAudioFilesFromList(files,'drop');return true}
 
 imageInput.onchange=()=>bindImageFile(imageInput.files&&imageInput.files[0],focusedObjectId||currentTrack?.id);
-function defaultAudioEnded(){playBtn.textContent='Play';validatorState.textContent='ENDED'}
-playBtn.onclick=async()=>{if(!audio.src&&focusedObjectId)return playTrack(focusedObjectId);if(!audio.src&&visibleCache[0])return playTrack(visibleCache[0].id);ensureAudioGraph();if(audioContext.state==='suspended')await audioContext.resume();if(audio.paused){await audio.play();playBtn.textContent='Pause';validatorState.textContent='PLAYING'}else{audio.pause();playBtn.textContent='Play';validatorState.textContent='PAUSED'}};audio.onended=defaultAudioEnded;seek.oninput=()=>{if(audio.duration)audio.currentTime=Number(seek.value)/1000*audio.duration};
+playBtn.onclick=async()=>{if(!audio.src&&focusedObjectId)return playTrack(focusedObjectId);if(!audio.src&&visibleCache[0])return playTrack(visibleCache[0].id);ensureAudioGraph();if(audioContext.state==='suspended')await audioContext.resume();if(audio.paused){await audio.play();playBtn.textContent='Pause';validatorState.textContent='PLAYING'}else{audio.pause();playBtn.textContent='Play';validatorState.textContent='PAUSED'}};audio.onended=()=>{playBtn.textContent='Play';validatorState.textContent='ENDED'};seek.oninput=()=>{if(audio.duration)audio.currentTime=Number(seek.value)/1000*audio.duration};
 borderColor.oninput=()=>{borderHex=borderColor.value;document.documentElement.style.setProperty('--borderRgb',borderHex)};waveColor.oninput=()=>{waveHex=waveColor.value;document.documentElement.style.setProperty('--waveRgb',waveHex)};
 canvas.addEventListener('wheel',e=>{e.preventDefault();if(mainView!=='icon')return;const before=screenToWorld(e.clientX,e.clientY),factor=e.deltaY<0?1.12:.89;zoom=Math.max(.25,Math.min(6,zoom*factor));const after=screenToWorld(e.clientX,e.clientY);panX+=after.x-before.x;panY+=after.y-before.y},{passive:false});canvas.onmousedown=e=>{dragging=true;lastX=e.clientX;lastY=e.clientY};addEventListener('mouseup',()=>dragging=false);addEventListener('mousemove',e=>{if(dragging&&mainView==='icon'){panX+=(e.clientX-lastX)/zoom;panY+=(e.clientY-lastY)/zoom;lastX=e.clientX;lastY=e.clientY}if(tNow-lastHoverMove<33)return;lastHoverMove=tNow;hovered=mainView==='icon'?pickIcon(e.clientX,e.clientY):pickWeb(e.clientX,e.clientY);if(hovered&&!document.body.classList.contains('hub-clean')){hoverCard.style.display='block';hoverCard.style.left=Math.min(w-300,e.clientX+16)+'px';hoverCard.style.top=Math.min(h-190,e.clientY+16)+'px';hoverTitle.textContent=trackDisplayTitle(hovered)||hovered.label||hovered.id;hoverGrid.innerHTML=`<div>folder</div><div>${hovered.folder}</div><div>song</div><div>${trackDisplayTitle(hovered)||hovered.id}</div><div>file</div><div>${hovered.name||hovered.id}</div><div>image</div><div>${hovered.image?'bound':'none'}</div><div>size</div><div>${hovered.file?Math.round(hovered.file.size/1024)+' KB':'demo'}</div><div>click</div><div>play audio</div>`}else hoverCard.style.display='none'});
 canvas.onclick=e=>{const p=mainView==='icon'?pickIcon(e.clientX,e.clientY):pickWeb(e.clientX,e.clientY);if(p)playTrack(p.objectId||p.id)};canvas.ondragover=e=>{e.preventDefault();dropHint.classList.add('hot')};canvas.ondragleave=()=>dropHint.classList.remove('hot');canvas.ondrop=async e=>{e.preventDefault();dropHint.classList.remove('hot');if(await loadDroppedFolder(e))return;const p=mainView==='icon'?pickIcon(e.clientX,e.clientY):pickWeb(e.clientX,e.clientY);bindDroppedImage(e,p?.objectId||p?.id||focusedObjectId||currentTrack?.id)};
@@ -669,8 +676,7 @@ function lockArtistForExport(){
   return artist;
 }
 function getExportFeat(){
-  const v=exportFeatInput&&exportFeatInput.value?exportFeatInput.value.trim():'';
-  return v.slice(0,36);
+  return exportFeatInput&&exportFeatInput.value?exportFeatInput.value.trim():'';
 }
 function getExportCreditLine(){
   const artist=getExportArtist();
@@ -1327,7 +1333,71 @@ function markImageRequirementSatisfied(tr){
     validatorState.textContent='IMAGE_LINKED';
   }
 }
-function getSelectedPlayableTrack(){let tr=currentTrack||objectById(focusedObjectId)||visibleObjects[0]||objects[0];if(!tr||!tr.file)return null;return tr}
+function getSelectedPlayableTrack(){
+  const visible=(typeof visibleObjects==='function'?visibleObjects():visibleCache)||[];
+  const candidates=[currentTrack,objectById(focusedObjectId),...visible,...objects];
+  return candidates.find(o=>o&&o.file)||null;
+}
+function getFirstPlayableTrack(){
+  const visible=(typeof visibleObjects==='function'?visibleObjects():visibleCache)||[];
+  return objects.find(o=>o&&o.file)||visible.find(o=>o&&o.file)||tracks.find(o=>o&&o.file)||null;
+}
+function makeChainTestWavFile(){
+  const sampleRate=44100,duration=4,channels=1,total=sampleRate*duration;
+  const bytesPerSample=2,dataSize=total*channels*bytesPerSample;
+  const buffer=new ArrayBuffer(44+dataSize),view=new DataView(buffer);
+  const write=(off,str)=>{for(let i=0;i<str.length;i++)view.setUint8(off+i,str.charCodeAt(i))};
+  write(0,'RIFF');view.setUint32(4,36+dataSize,true);write(8,'WAVE');write(12,'fmt ');
+  view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,channels,true);view.setUint32(24,sampleRate,true);
+  view.setUint32(28,sampleRate*channels*bytesPerSample,true);view.setUint16(32,channels*bytesPerSample,true);view.setUint16(34,16,true);
+  write(36,'data');view.setUint32(40,dataSize,true);
+  let off=44;
+  for(let i=0;i<total;i++){
+    const t=i/sampleRate;
+    const env=Math.min(1,i/(sampleRate*.12))*Math.min(1,(total-i)/(sampleRate*.18));
+    const tone=(Math.sin(2*Math.PI*440*t)*.42+Math.sin(2*Math.PI*660*t)*.18)*env;
+    view.setInt16(off,Math.max(-1,Math.min(1,tone))*32767,true);off+=2;
+  }
+  const blob=new Blob([buffer],{type:'audio/wav'});
+  try{return new File([blob],'Voxel_Audio_Chain_Test_440Hz.wav',{type:'audio/wav',lastModified:Date.now()})}
+  catch(e){blob.name='Voxel_Audio_Chain_Test_440Hz.wav';return blob}
+}
+function ensureChainTestTrack(){
+  const existing=getFirstPlayableTrack();
+  if(existing)return existing;
+  const file=makeChainTestWavFile();
+  const id='audio_chain_test_generated';
+  tracks=tracks.filter(t=>t.id!==id);
+  tracks.push({id,name:'Voxel_Audio_Chain_Test_440Hz.wav',displayTitle:'Voxel Audio Chain Test',songTitle:'Voxel Audio Chain Test',titleSource:'chain-test',artistTag:'CHAIN TEST',path:'chain-test/Voxel_Audio_Chain_Test_440Hz.wav',folder:'chain-test',file,url:null,kind:'audio',image:null,imageFile:null,color:'#28e7ff',load:.5,links:1,receipts:0,pulse:0,group:'audio'});
+  focusedFolder=null;focusedObjectId=id;currentTrack=null;searchQuery='';if(searchInput)searchInput.value='';
+  rebuild();
+  return objectById(id)||tracks.find(t=>t.id===id)||null;
+}
+function getChainFallbackArtDataUrl(tr){
+  try{
+    const c=document.createElement('canvas');c.width=900;c.height=900;const g=c.getContext('2d');
+    const grad=g.createLinearGradient(0,0,c.width,c.height);grad.addColorStop(0,borderHex||'#37e9ff');grad.addColorStop(.55,'#09101f');grad.addColorStop(1,waveHex||'#37e9ff');
+    g.fillStyle=grad;g.fillRect(0,0,c.width,c.height);
+    g.strokeStyle='rgba(255,255,255,.22)';g.lineWidth=8;g.strokeRect(42,42,c.width-84,c.height-84);
+    g.fillStyle='rgba(255,255,255,.92)';g.textAlign='center';g.textBaseline='middle';
+    g.font='800 84px system-ui,Segoe UI,Arial';g.fillText('VOXEL',c.width/2,c.height/2-62);
+    g.font='700 72px system-ui,Segoe UI,Arial';g.fillText('AUDIO',c.width/2,c.height/2+34);
+    g.font='22px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';g.fillStyle='rgba(255,255,255,.72)';
+    g.fillText(cleanTrackTitle((tr&&tr.name)||'chain test').slice(0,36),c.width/2,c.height-120);
+    return c.toDataURL('image/png');
+  }catch(e){return ''}
+}
+function prepareChainTestTrack(){
+  let tr=getSelectedPlayableTrack()||getFirstPlayableTrack()||ensureChainTestTrack();
+  if(!tr||!tr.file){validatorState.textContent='CHAIN_TEST_INTERNAL_FAIL';showBootDiag('Chain Test could not create a temporary audio file in this browser.',true);return null}
+  currentTrack=tr;focusedObjectId=tr.id;focusedFolder=tr.folder;
+  if(!trackHasBoundImage(tr)){tr.image=getChainFallbackArtDataUrl(tr);tr.imageFile=null;}
+  if(exportArtistInput&&!getExportArtist())exportArtistInput.value='CHAIN TEST';
+  if(exportTitleInput&&!exportTitleInput.value.trim())exportTitleInput.value=cleanTrackTitle(tr.name||'Voxel Audio Chain Test');
+  prepareExportTitle(tr);updateFloatingImage();renderLists();updatePathBar();
+  showBootDiag(tr.id==='audio_chain_test_generated'?'Chain Test using generated temporary 440Hz WAV + fallback art. No folder/image/artist input required.':'Chain Test using selected audio with temporary fallback art/artist if needed.');
+  return tr;
+}
 
 
 function nowStamp(){return new Date().toISOString()}
@@ -1417,12 +1487,20 @@ function cycleExportFormat(){
   const order=['auto','mp4','webm'];
   exportFormatPreference=order[(order.indexOf(exportFormatPreference)+1)%order.length];
   formatBtn.textContent='Record: '+exportFormatPreference.toUpperCase();
-  setExportReason('Export format preference changed.',exportFormatPreference==='auto'?'Auto tries MP4 first, then WebM fallback. MP4 now uses direct audio capture first.':'Forces '+exportFormatPreference.toUpperCase()+' if supported, otherwise falls back safely. If MP4 still drops audio in this browser, use Build MP4 Kit for final MP4.');
+  setExportReason('Export format preference changed.',exportFormatPreference==='auto'?'Auto tries browser-playable MP4 first, then WebM fallback. Every export now must pass recorder-input and blob-playback validation before download/Vault save.':'Forces '+exportFormatPreference.toUpperCase()+' if supported, otherwise falls back safely. If MP4 still drops audio in this browser, use Build MP4 Kit for final MP4.');
 }
+/*
+  Browser Record format selection.
+  Important: browser MediaRecorder support is not enough by itself. Some browsers can
+  produce a blob that has streams but still fails local playback. The later
+  validateBlobCanActuallyPlay() gate is the authority before any download/Vault save.
+*/
 function pickExportMime(){
   const autoOptions=[
+    // MP4 is preferred for social upload compatibility when the browser can both record and play it.
     {mime:'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',ext:'mp4',label:'MP4/H.264'},
     {mime:'video/mp4',ext:'mp4',label:'MP4'},
+    // WebM is the safety fallback for browsers whose MP4 recorder output is unstable.
     {mime:'video/webm;codecs=vp9,opus',ext:'webm',label:'WebM/VP9'},
     {mime:'video/webm;codecs=vp8,opus',ext:'webm',label:'WebM/VP8'},
     {mime:'video/webm',ext:'webm',label:'WebM'}
@@ -1434,65 +1512,130 @@ function pickExportMime(){
       : autoOptions;
   pushExportLog('format preference',{preference:exportFormatPreference});
   for(const o of options){
-    let ok=false;
-    try{ ok=MediaRecorder.isTypeSupported(o.mime); }catch(e){pushExportLog('mime probe threw',{mime:o.mime,error:String(e.message||e)})}
-    pushExportLog('mime probe',{mime:o.mime,label:o.label,supported:ok});
-    if(ok) return o;
+    let recorderOk=false,playbackOk=false;
+    try{ recorderOk=MediaRecorder.isTypeSupported(o.mime); }catch(e){pushExportLog('mime probe threw',{mime:o.mime,error:String(e.message||e)})}
+    try{ playbackOk=!!document.createElement('video').canPlayType(o.mime); }catch(e){ playbackOk=false }
+    pushExportLog('mime probe',{mime:o.mime,label:o.label,recorderSupported:recorderOk,browserCanPlay:playbackOk});
+    if(recorderOk&&playbackOk) return o;
   }
+  // Last resort: allow the browser default, but the blob playback validator still gets final say.
   pushExportLog('mime fallback',{mime:'browser default'});
   return {mime:'',ext:'webm',label:'browser-default'};
 }
+/*
+  Build a fresh audio capture stream for one export.
+  Rule: this function may create temporary WebAudio destinations, but it must never
+  stop or destroy the real <audio> element path. Repeat exports depend on that.
+*/
 function getReliableExportAudioStream(){
-  // Prefer direct <audio>.captureStream(), then fall back to a fresh WebAudio destination.
-  // Returns an object so source streams are never stopped by recorder cleanup.
   const direct=(audio.captureStream&&audio.captureStream())||(audio.mozCaptureStream&&audio.mozCaptureStream());
   const directTracks=direct&&direct.getAudioTracks?direct.getAudioTracks():[];
   pushExportLog('direct audio element capture tracks',{audioTracks:directTracks.length,trackStates:directTracks.map(t=>({enabled:t.enabled,readyState:t.readyState,label:t.label||''}))});
-  if(directTracks.length){
-    directTracks.forEach(t=>t.enabled=true);
-    return {stream:direct,kind:'audio-element-capture',cleanup:null};
-  }
+  if(directTracks.some(t=>t.readyState==='live')){directTracks.forEach(t=>t.enabled=true);return {stream:direct,mode:'audio-element-capture',tracks:directTracks}}
 
-  if(!audioContext) ensureAudioGraph();
+  // Fallback path: create a one-export MediaStreamDestination connected to the shared source.
+  if(!audioContext)ensureAudioGraph();
   pushExportLog('audio graph state before stream',{state:audioContext&&audioContext.state,hasSource:!!source,hasAnalyser:!!analyser});
-  const destination=audioContext.createMediaStreamDestination();
-  exportAudioDestination=destination;
-  try{source.connect(destination)}catch(e){pushExportLog('source connect to export destination failed',{error:String(e.message||e)})}
-  const stream=destination.stream;
+  try{if(exportAudioDestination)source.disconnect(exportAudioDestination)}catch(e){}
+  exportAudioDestination=audioContext.createMediaStreamDestination();
+  try{source.connect(exportAudioDestination)}catch(e){pushExportLog('source connect to fresh export destination failed',{error:String(e.message||e)})}
+  const stream=exportAudioDestination.stream;
   const graphTracks=stream&&stream.getAudioTracks?stream.getAudioTracks():[];
   pushExportLog('webaudio export destination tracks',{audioTracks:graphTracks.length,trackStates:graphTracks.map(t=>({enabled:t.enabled,readyState:t.readyState,label:t.label||''}))});
-  if(graphTracks.length){
-    graphTracks.forEach(t=>t.enabled=true);
-    return {stream,kind:'webaudio-destination',cleanup:()=>{try{source.disconnect(destination)}catch(e){} if(exportAudioDestination===destination)exportAudioDestination=null;}};
-  }
-
-  try{source.disconnect(destination)}catch(e){}
-  if(exportAudioDestination===destination)exportAudioDestination=null;
-  setExportReason('No audio stream could be created for the recorder.','The browser returned 0 audio tracks from both audio.captureStream() and WebAudio MediaStreamDestination. Press Play once, then export again; or use Build MP4 Kit for final MP4.');
+  if(graphTracks.some(t=>t.readyState==='live')){graphTracks.forEach(t=>t.enabled=true);return {stream,mode:'webaudio-destination-fresh',tracks:graphTracks}}
+  setExportReason('No audio stream could be created for the recorder.','The browser returned 0 live audio tracks from both audio.captureStream() and WebAudio MediaStreamDestination. Press Play once, then export again; or use Build MP4 Kit for final MP4.');
   return null;
 }
-function cloneAudioTracksForRecorder(audioCapture){
-  const stream=audioCapture&&audioCapture.stream?audioCapture.stream:audioCapture;
-  const sourceTracks=stream&&stream.getAudioTracks?stream.getAudioTracks():[];
-  return sourceTracks.map(t=>{let out=t;try{out=t.clone?t.clone():t}catch(e){out=t}out.enabled=true;return out});
+
+/* Wait until the browser can read audio metadata. Recorder setup before this point is too early. */
+function waitForAudioReady(timeoutMs=15000){return new Promise((resolve,reject)=>{if(audio.readyState>=2)return resolve();let done=false;const cleanup=()=>{audio.removeEventListener('loadedmetadata',check);audio.removeEventListener('canplay',check);audio.removeEventListener('error',fail);clearTimeout(timer)};const check=()=>{if(done)return;if(audio.readyState>=2){done=true;cleanup();resolve()}};const fail=()=>{if(done)return;done=true;cleanup();reject(new Error('Audio failed to load for export: '+(audio.error&&audio.error.message||audio.error&&audio.error.code||'unknown audio error')))};const timer=setTimeout(()=>{if(done)return;done=true;cleanup();reject(new Error('Timed out waiting for audio metadata/canplay before export'))},timeoutMs);audio.addEventListener('loadedmetadata',check);audio.addEventListener('canplay',check);audio.addEventListener('error',fail);try{audio.load()}catch(e){}})}
+
+/*
+  Clone recorder audio tracks so export cleanup cannot kill the reusable source track.
+  This is the fix for the original bug: first export worked, then later exports lost audio.
+*/
+function cloneRecorderAudioTracks(audioCapture){
+  const sourceTracks=(audioCapture&&audioCapture.tracks)||[];
+  const live=sourceTracks.filter(t=>t&&t.readyState==='live');
+  const clones=[],owned=[];
+  live.forEach(t=>{let c=t;if(typeof t.clone==='function'){c=t.clone();owned.push(c)}c.enabled=true;clones.push(c)});
+  pushExportLog('recorder-owned audio clone tracks',{sourceMode:audioCapture&&audioCapture.mode,audioTracks:clones.length,ownedClones:owned.length,trackStates:clones.map(t=>({enabled:t.enabled,readyState:t.readyState,label:t.label||''}))});
+  return {tracks:clones,owned};
 }
-function stopTracksSafely(tracks,label){
-  (tracks||[]).forEach(t=>{try{t.stop()}catch(e){pushExportLog('track stop failed',{label:label||'',error:String(e.message||e)})}});
+
+/* Stop only disposable tracks that this export owns. Never pass the real audio element stream here. */
+function stopTracksSafely(tracks,label){(tracks||[]).forEach(t=>{try{t.stop()}catch(e){pushExportLog('track stop failed',{label,error:String(e.message||e)})}})}
+function cleanupExportAudioDestination(){try{if(source&&exportAudioDestination)source.disconnect(exportAudioDestination)}catch(e){}exportAudioDestination=null}
+
+/*
+  Live recorder-input validation.
+  This samples the exact mixed MediaStream sent into MediaRecorder while recording.
+  Passing this gate means the recorder was receiving audio energy; it does not yet
+  prove the final blob can play, so validateBlobCanActuallyPlay() runs after this.
+*/
+function createRecorderValidationProbe(stream){
+  try{
+    if(!audioContext)ensureAudioGraph();
+    const liveAudio=(stream&&stream.getAudioTracks?stream.getAudioTracks():[]).filter(t=>t&&t.readyState==='live'&&t.enabled!==false);
+    if(!stream||!liveAudio.length)return {ok:false,reason:'recorder stream has no live enabled audio tracks to validate'};
+    const node=audioContext.createMediaStreamSource(stream);
+    const analyserNode=audioContext.createAnalyser();
+    analyserNode.fftSize=1024;analyserNode.smoothingTimeConstant=.15;
+    node.connect(analyserNode);
+    const freq=new Uint8Array(analyserNode.frequencyBinCount),time=new Uint8Array(analyserNode.fftSize);
+    const stats={samples:0,nonSilent:0,peak:0,avgPeak:0,rmsPeak:0,trackCount:liveAudio.length,trackStates:liveAudio.map(t=>({enabled:t.enabled,readyState:t.readyState,label:t.label||''}))};
+    return {ok:true,stats,sample(){try{analyserNode.getByteFrequencyData(freq);analyserNode.getByteTimeDomainData(time);let max=0,sum=0,rms=0;for(let i=0;i<freq.length;i++){const v=freq[i];if(v>max)max=v;sum+=v}for(let i=0;i<time.length;i++){const d=time[i]-128;rms+=d*d}const avg=sum/Math.max(1,freq.length),rmsVal=Math.sqrt(rms/Math.max(1,time.length));stats.samples++;stats.peak=Math.max(stats.peak,max);stats.avgPeak=Math.max(stats.avgPeak,avg);stats.rmsPeak=Math.max(stats.rmsPeak,rmsVal);if(max>=4||avg>=.75||rmsVal>=.7)stats.nonSilent++}catch(e){pushExportLog('recorder validation sample failed',{error:String(e.message||e)})}},close(){try{node.disconnect()}catch(e){}try{analyserNode.disconnect()}catch(e){}}};
+  }catch(e){return {ok:false,reason:String(e.message||e)}}
 }
-function waitForAudioReadyForExport(timeoutMs=5000){
+
+/* Validate size and live-audio probe stats before the app is allowed to save a blob. */
+function validateRecordedInput(probe,blob,maxSeconds){
+  const stats=probe&&probe.stats?probe.stats:null,problems=[],minBytes=maxSeconds?24000:48000;
+  if(!blob||!blob.size)problems.push('zero-byte recorder blob');
+  else if(blob.size<minBytes)problems.push('recorder blob is too small for a real audio/video export ('+formatBytes(blob.size)+')');
+  if(!probe||!probe.ok)problems.push('recorder audio validator unavailable: '+((probe&&probe.reason)||'unknown'));
+  else{if(!stats.trackCount)problems.push('validator saw 0 recorder audio tracks');if(stats.samples<8)problems.push('validator collected too few audio samples ('+stats.samples+')');if(stats.nonSilent<2)problems.push('validator heard no real audio energy in the recorder input; export would likely be silent')}
+  return {ok:!problems.length,problems,stats:stats||{},bytes:blob&&blob.size||0};
+}
+
+/*
+  Final blob playback validation.
+  The export is not downloaded or saved to Vault until the browser can load the
+  finished blob, read a sane duration, seek into it, and advance playback while muted.
+  This catches the “file exists but does nothing” class of failures.
+*/
+function validateBlobCanActuallyPlay(blob,expectedSeconds,label='export',timeoutMs=12000){
   return new Promise(resolve=>{
-    if(audio.readyState>=2){resolve(true);return}
-    let done=false;
-    const finish=ok=>{if(done)return;done=true;clearTimeout(timer);audio.removeEventListener('loadedmetadata',onReady);audio.removeEventListener('canplay',onReady);audio.removeEventListener('error',onErr);resolve(ok)};
-    const onReady=()=>finish(true);
-    const onErr=()=>finish(false);
-    const timer=setTimeout(()=>finish(audio.readyState>=1),timeoutMs);
-    audio.addEventListener('loadedmetadata',onReady,{once:true});
-    audio.addEventListener('canplay',onReady,{once:true});
-    audio.addEventListener('error',onErr,{once:true});
-    try{audio.load()}catch(e){}
+    const problems=[];
+    if(!blob||!blob.size){resolve({ok:false,problems:['playback validation received empty blob'],duration:0});return}
+    const url=URL.createObjectURL(blob);
+    const video=document.createElement('video');
+    let settled=false,playStartedAt=0,timeAdvanced=false;
+    const finish=(ok,extra={})=>{if(settled)return;settled=true;clearTimeout(timer);try{video.pause()}catch(e){}try{video.removeAttribute('src');video.load()}catch(e){}URL.revokeObjectURL(url);resolve(Object.assign({ok,problems,duration:Number.isFinite(video.duration)?video.duration:0,readyState:video.readyState,currentTime:video.currentTime},extra))};
+    const timer=setTimeout(()=>{problems.push(label+' blob playback validation timed out');finish(false)},timeoutMs);
+    video.muted=true;video.playsInline=true;video.preload='auto';
+    video.onerror=()=>{const err=video.error;problems.push(label+' blob could not be decoded/played by this browser'+(err?': code '+err.code:''));finish(false)};
+    video.onloadedmetadata=()=>{
+      const duration=Number.isFinite(video.duration)?video.duration:0;
+      if(duration<=0){problems.push(label+' blob loaded with invalid duration');finish(false);return}
+      const minimum=expectedSeconds?Math.max(.75,Math.min(expectedSeconds*.45,expectedSeconds-0.25)):1.0;
+      if(duration<minimum){problems.push(label+' blob duration too short: '+duration.toFixed(2)+'s');finish(false);return}
+      try{video.currentTime=Math.min(Math.max(.35,duration*.35),Math.max(.35,duration-.25))}catch(e){pushExportLog('blob seek attempt failed',{label,error:String(e.message||e)})}
+      const playPromise=video.play();
+      playStartedAt=performance.now();
+      if(playPromise&&playPromise.catch)playPromise.catch(e=>{problems.push(label+' blob play() failed: '+String(e.message||e));finish(false)});
+    };
+    video.ontimeupdate=()=>{
+      if(!playStartedAt)return;
+      if(video.currentTime>.2)timeAdvanced=true;
+      if(timeAdvanced&&performance.now()-playStartedAt>300)finish(true,{playedSeconds:video.currentTime});
+    };
+    video.oncanplay=()=>{if(!playStartedAt){const p=video.play();playStartedAt=performance.now();if(p&&p.catch)p.catch(e=>{problems.push(label+' blob canplay/play failed: '+String(e.message||e));finish(false)})}};
+    video.src=url;
+    try{video.load()}catch(e){problems.push(label+' blob load() threw: '+String(e.message||e));finish(false)}
   });
 }
+
 
 function sanitizeFileName(name, fallback='file'){
   const base=(name||fallback).replace(/\.[^/.]+$/,'').replace(/[^\w\-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80);
@@ -1727,7 +1870,7 @@ async function reExportVaultItem(id){
     return;
   }
 
-  const seconds=Number.isFinite(Number(meta.maxSeconds))&&Number(meta.maxSeconds)>0?Number(meta.maxSeconds):(item.type==='browser-record-test'?10:null);
+  const seconds=meta.maxSeconds||item.type==='browser-record-test'?10:null;
   showBootDiag('Re-exporting vault item with edited metadata...');
   validatorState.textContent='REEXPORT_STARTED';
   await startFullVideoExport(seconds);
@@ -1793,14 +1936,38 @@ function renderSessionExportHistory(){
     inp.onchange=()=>updateVaultItemMeta(inp.dataset.vault,inp.dataset.field,inp.value);
   });
 }
-async function startFullVideoExport(maxSeconds=null){if(exporting)return;exportMaxSeconds=maxSeconds;const tr=requireSelectedTrackImage(maxSeconds?'10s Record':'Record Full');if(!tr)return;exportPanel.classList.add('active');resetExportRunLog(tr);prepareExportTitle(tr);resetExportSmoothingForTrack(null);if(!window.MediaRecorder){setExportReason('MediaRecorder is not available in this browser.','Use current Chrome, Edge, or Safari. Firefox/older Safari may not support the needed video/audio recording path.');alert('This browser does not support MediaRecorder. Use a current Chrome/Edge/Safari browser.');return}exporting=true;exportCancel=false;exportChunks=[];exportPanel.classList.add('active');exportState.textContent='preparing';exportInfo.textContent='Preparing '+(maxSeconds?maxSeconds+' second test':'full-track')+' video export for: '+getExportTitle(tr);exportFill.style.width='0%';validatorState.textContent='EXPORT_PREPARING';try{pushExportLog('creating audio graph');ensureAudioGraph();pushExportLog('audio graph ready',{state:audioContext.state});if(audioContext.state==='suspended'){pushExportLog('resuming audio context');await audioContext.resume();pushExportLog('audio context resumed',{state:audioContext.state});}if(currentUrl)URL.revokeObjectURL(currentUrl);currentUrl=URL.createObjectURL(tr.file);audio.src=currentUrl;audio.currentTime=0;audio.playbackRate=1;pushExportLog('audio src assigned',{name:tr.name,songTitle:getExportTitle(tr),type:tr.file.type,size:tr.file.size});currentTrack=tr;focusedObjectId=tr.id;focusedFolder=tr.folder;updateFloatingImage();renderLists();updatePathBar();const img=await loadImageElement(tr.image);pushExportLog('cover image loaded',{hasImage:!!img});exportCanvas=document.createElement('canvas');exportCanvas.width=1280;exportCanvas.height=720;exportCtx=exportCanvas.getContext('2d',{alpha:false});const captureFps=(qualityMode==='lite'||qualityMode==='eco')?30:60;pushExportLog('export canvas ready',{width:1280,height:720,fps:captureFps,quality:qualityMode});const videoStream=exportCanvas.captureStream(captureFps);pushExportLog('canvas capture stream',{videoTracks:videoStream.getVideoTracks().length,fps:captureFps});const mediaReady=await waitForAudioReadyForExport();pushExportLog('audio media readiness',{ready:mediaReady,readyState:audio.readyState,duration:audio.duration});const audioCapture=getReliableExportAudioStream();const rawAudioStream=audioCapture&&audioCapture.stream?audioCapture.stream:audioCapture;if(!rawAudioStream||!rawAudioStream.getAudioTracks().length)throw new Error('Audio export stream unavailable. Try Chrome/Edge and press Play once before Export.');const exportFormat=pickExportMime();exportMime=exportFormat.mime||'video/webm';exportInfo.textContent='Recording '+exportFormat.label+' '+(maxSeconds?maxSeconds+'s test':'full-track')+' export for: '+getExportTitle(tr);pushExportLog('chosen export format',exportFormat);const recorderAudioTracks=cloneAudioTracksForRecorder(audioCapture);
-if(!recorderAudioTracks.length)throw new Error('Recorder could not clone audio tracks. Export aborted to prevent a silent video.');
-const mixed=new MediaStream([...videoStream.getVideoTracks(),...recorderAudioTracks]);
-const mixedAudioTracks=mixed.getAudioTracks();
-const mixedVideoTracks=mixed.getVideoTracks();
-pushExportLog('mixed recorder stream tracks',{videoTracks:mixedVideoTracks.length,audioTracks:mixedAudioTracks.length,audioTrackStates:mixedAudioTracks.map(t=>({enabled:t.enabled,readyState:t.readyState,label:t.label||''}))});
-if(!mixedAudioTracks.length)throw new Error('Recorder stream has no audio tracks before MediaRecorder starts. Export aborted to prevent a silent video.');pushExportLog('recorder audio policy',{policy:'clone-recorder-audio-tracks-no-source-stop',captureKind:audioCapture&&audioCapture.kind||'unknown',selectedContainer:exportFormat.ext,selectedMime:exportFormat.mime||'browser-default'});
-const recorderOptions={videoBitsPerSecond:6500000,audioBitsPerSecond:192000};if(exportFormat.mime)recorderOptions.mimeType=exportFormat.mime;exportRecorder=new MediaRecorder(mixed,recorderOptions);pushExportLog('media recorder created',{mimeType:exportRecorder.mimeType,state:exportRecorder.state,videoTracks:mixed.getVideoTracks().length,audioTracks:mixed.getAudioTracks().length});exportRecorder.ondataavailable=e=>{if(e.data&&e.data.size){exportChunks.push(e.data);pushExportLog('recorder chunk',{bytes:e.data.size,totalChunks:exportChunks.length})}};exportRecorder.onerror=e=>{const msg=(e&&e.error&&e.error.message)||e.message||'MediaRecorder error';setExportReason('MediaRecorder error.',msg);pushExportLog('recorder error',{name:e&&e.error&&e.error.name,message:msg});validatorState.textContent='EXPORT_FAILED'};exportRecorder.onstart=()=>pushExportLog('recorder started',{mimeType:exportRecorder.mimeType});exportRecorder.onstop=()=>{pushExportLog('recorder stopped',{chunks:exportChunks.length});stopTracksSafely(videoStream.getTracks(),'export-video');stopTracksSafely(recorderAudioTracks,'recorder-audio-clones');try{audioCapture&&audioCapture.cleanup&&audioCapture.cleanup()}catch(e){pushExportLog('audio capture cleanup failed',{error:String(e.message||e)})}exportRaf&&cancelAnimationFrame(exportRaf);audio.onended=defaultAudioEnded;audio.playbackRate=1;if(exportCancel){exportState.textContent='cancelled';exportInfo.textContent='Export cancelled.';validatorState.textContent='EXPORT_CANCELLED';setTimeout(()=>exportPanel.classList.remove('active'),1200);exporting=false;return}const outType=exportRecorder&&exportRecorder.mimeType?exportRecorder.mimeType:exportMime;const ext=(outType||'').includes('mp4')?'mp4':'webm';const blob=new Blob(exportChunks,{type:outType||'video/webm'});pushExportLog('blob assembled',{bytes:blob.size,type:blob.type,ext});if(!blob.size){setExportReason('Export produced a zero-byte video.','The recorder stopped without producing data chunks. Try WebM in Chrome/Edge or shorten the test track.');validatorState.textContent='EXPORT_FAILED';exporting=false;return}const filename=getExportTitle(tr).replace(/[^\w\-]+/g,'_').slice(0,80)+(maxSeconds?'_10s_Test':'')+'_Voxel_Audio_Visualizer.'+ext;addSessionExport(blob,filename,maxSeconds?'browser-record-test':'browser-record-full',captureCurrentExportMeta(tr,maxSeconds?'browser-record-test':'browser-record-full'));const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);exportState.textContent='complete';exportInfo.textContent='Downloaded full visualizer video: '+filename+' — also saved in Session Export Vault.';setExportReason('Export completed successfully.','Saved '+filename+' ('+Math.round(blob.size/1024/1024*10)/10+' MB). It is also kept in the Session Export Vault until this page is closed/reloaded.');exportFill.style.width='100%';validatorState.textContent='EXPORT_COMPLETE';exporting=false};const tick=async()=>{if(!exporting)return;await renderExportVideoFrame(exportCtx,exportCanvas,img,tr,exportStartWall);const pct=(audio.duration&&isFinite(audio.duration))?Math.min(100,audio.currentTime/audio.duration*100):0;exportFill.style.width=pct.toFixed(2)+'%';exportState.textContent=exportCancel?'cancelling':('exporting '+Math.floor(pct)+'%');if(maxSeconds&&audio.currentTime>=maxSeconds){pushExportLog('test export duration reached',{maxSeconds});try{audio.pause()}catch(e){} if(exportRecorder&&exportRecorder.state!=='inactive')exportRecorder.stop();return}if(exportCancel){try{audio.pause()}catch(e){} if(exportRecorder&&exportRecorder.state!=='inactive')exportRecorder.stop();return}exportRaf=requestAnimationFrame(tick)};exportRecorder.start(1000);exportStartWall=performance.now();pushExportLog('starting playback for recording',{maxSeconds:maxSeconds||'full',recordSpeed:'1x-normal'});await audio.play();pushExportLog('playback started',{duration:audio.duration,currentTime:audio.currentTime});playBtn.textContent='Pause';validatorState.textContent='EXPORT_RECORDING';setExportReason('Recording in progress.','Browser Record is running at normal 1x song speed. Use Build MP4 Kit when you want faster-than-realtime final MP4 rendering without changing the audio speed. If recording fails, the exact exception and browser codec support will appear here and in the downloadable log.');tick();audio.onended=()=>{playBtn.textContent='Play';validatorState.textContent=exporting?'EXPORT_FINALIZING':'ENDED';if(exporting&&exportRecorder&&exportRecorder.state!=='inactive')setTimeout(()=>exportRecorder.stop(),250)}}catch(err){console.error(err);const msg=String(err&&err.message||err);pushExportLog('fatal export exception',{message:msg,stack:err&&err.stack});setExportReason('Export failed.',msg);exportState.textContent='failed';exportInfo.textContent=msg;validatorState.textContent='EXPORT_FAILED';try{exportRaf&&cancelAnimationFrame(exportRaf)}catch(e){}audio.onended=defaultAudioEnded;audio.playbackRate=1;exporting=false}}
+async function startFullVideoExport(maxSeconds=null){
+  if(exporting){showBootDiag('Export already running; wait for current export to finish or cancel it.',true);return null}
+  exportMaxSeconds=maxSeconds;const tr=requireSelectedTrackImage(maxSeconds?'10s Record':'Record Full');if(!tr)return null;exportPanel.classList.add('active');resetExportRunLog(tr);prepareExportTitle(tr);resetExportSmoothingForTrack(null);
+  if(!window.MediaRecorder){setExportReason('MediaRecorder is not available in this browser.','Use current Chrome, Edge, or Safari. Browser Record cannot validate/export without MediaRecorder. Use Build MP4 Kit for final output.');validatorState.textContent='MEDIARECORDER_MISSING';return null}
+  exporting=true;exportCancel=false;exportChunks=[];exportState.textContent='preparing';exportInfo.textContent='Preparing '+(maxSeconds?maxSeconds+' second test':'full-track')+' video export for: '+getExportTitle(tr);exportFill.style.width='0%';validatorState.textContent='EXPORT_PREPARING';
+  let videoStream=null,recorderAudioOwnedTracks=[],restoreOnEnded=audio.onended,stopResolved=false,validationProbe=null,mixed=null;
+  const restoreAudioEnded=()=>{audio.onended=restoreOnEnded||(()=>{playBtn.textContent='Play';validatorState.textContent='ENDED'})};
+  const failClean=(msg,detail)=>{setExportReason(msg,detail||'');exportState.textContent='failed';exportInfo.textContent=detail||msg;validatorState.textContent='EXPORT_FAILED_VALIDATION';exportFill.style.width='0%'};
+  try{pushExportLog('creating audio graph');ensureAudioGraph();pushExportLog('audio graph ready',{state:audioContext.state});if(audioContext.state==='suspended'){pushExportLog('resuming audio context');await audioContext.resume();pushExportLog('audio context resumed',{state:audioContext.state})}
+    if(currentUrl)URL.revokeObjectURL(currentUrl);currentUrl=URL.createObjectURL(tr.file);audio.pause();audio.removeAttribute('src');audio.load();audio.src=currentUrl;audio.currentTime=0;audio.playbackRate=1;audio.volume=1;audio.muted=false;pushExportLog('audio src assigned',{name:tr.name,songTitle:getExportTitle(tr),type:tr.file.type,size:tr.file.size});await waitForAudioReady();if(!Number.isFinite(audio.duration)||audio.duration<=0)throw new Error('Audio duration is unavailable before export; browser cannot validate this audio file.');pushExportLog('audio ready for capture',{readyState:audio.readyState,duration:audio.duration,currentTime:audio.currentTime});
+    currentTrack=tr;focusedObjectId=tr.id;focusedFolder=tr.folder;updateFloatingImage();renderLists();updatePathBar();const img=await loadImageElement(tr.image);pushExportLog('cover image loaded',{hasImage:!!img});exportCanvas=document.createElement('canvas');exportCanvas.width=1280;exportCanvas.height=720;exportCtx=exportCanvas.getContext('2d',{alpha:false});const captureFps=(qualityMode==='lite'||qualityMode==='eco')?30:60;pushExportLog('export canvas ready',{width:1280,height:720,fps:captureFps,quality:qualityMode});videoStream=exportCanvas.captureStream(captureFps);pushExportLog('canvas capture stream',{videoTracks:videoStream.getVideoTracks().length,fps:captureFps});
+    const audioCapture=getReliableExportAudioStream();if(!audioCapture||!audioCapture.tracks||!audioCapture.tracks.length)throw new Error('Audio export stream unavailable. Try Chrome/Edge and press Play once before Export.');const cloned=cloneRecorderAudioTracks(audioCapture);recorderAudioOwnedTracks=cloned.owned;if(!cloned.tracks.length)throw new Error('Recorder stream has no live audio tracks before MediaRecorder starts. Export aborted to prevent a silent video.');
+    const exportFormat=pickExportMime();exportMime=exportFormat.mime||'video/webm';exportInfo.textContent='Recording '+exportFormat.label+' '+(maxSeconds?maxSeconds+'s test':'full-track')+' export for: '+getExportTitle(tr);pushExportLog('chosen export format',exportFormat);mixed=new MediaStream([...videoStream.getVideoTracks(),...cloned.tracks]);const mixedAudioTracks=mixed.getAudioTracks(),mixedVideoTracks=mixed.getVideoTracks();pushExportLog('mixed recorder stream tracks',{videoTracks:mixedVideoTracks.length,audioTracks:mixedAudioTracks.length,audioTrackStates:mixedAudioTracks.map(t=>({enabled:t.enabled,readyState:t.readyState,label:t.label||''}))});if(!mixedAudioTracks.length)throw new Error('Recorder stream has no audio tracks before MediaRecorder starts. Export aborted to prevent a silent video.');
+    validationProbe=createRecorderValidationProbe(mixed);pushExportLog('recorder validation probe',{ok:!!(validationProbe&&validationProbe.ok),reason:validationProbe&&validationProbe.reason||'',stats:validationProbe&&validationProbe.stats||null});if(!validationProbe||!validationProbe.ok)throw new Error('Recorder audio validation could not start: '+((validationProbe&&validationProbe.reason)||'unknown'));
+    pushExportLog('recorder audio policy',{policy:'clone-source-audio-never-stop-original + validate-recorder-input-before-download',selectedContainer:exportFormat.ext,selectedMime:exportFormat.mime||'browser-default'});const recorderOptions={videoBitsPerSecond:6500000,audioBitsPerSecond:192000};if(exportFormat.mime)recorderOptions.mimeType=exportFormat.mime;exportRecorder=new MediaRecorder(mixed,recorderOptions);pushExportLog('media recorder created',{mimeType:exportRecorder.mimeType,state:exportRecorder.state,videoTracks:mixed.getVideoTracks().length,audioTracks:mixed.getAudioTracks().length});
+    const stopped=new Promise(resolve=>{exportRecorder.ondataavailable=e=>{if(e.data&&e.data.size){exportChunks.push(e.data);pushExportLog('recorder chunk',{bytes:e.data.size,totalChunks:exportChunks.length})}};exportRecorder.onerror=e=>{const msg=(e&&e.error&&e.error.message)||e.message||'MediaRecorder error';setExportReason('MediaRecorder error.',msg);pushExportLog('recorder error',{name:e&&e.error&&e.error.name,message:msg});validatorState.textContent='EXPORT_FAILED'};exportRecorder.onstart=()=>pushExportLog('recorder started',{mimeType:exportRecorder.mimeType});exportRecorder.onstop=()=>{if(stopResolved)return;stopResolved=true;pushExportLog('recorder stopped',{chunks:exportChunks.length});resolve()}});
+    const tick=async()=>{if(!exporting)return;if(validationProbe&&validationProbe.ok)validationProbe.sample();await renderExportVideoFrame(exportCtx,exportCanvas,img,tr,exportStartWall);const pct=(audio.duration&&isFinite(audio.duration))?Math.min(100,audio.currentTime/audio.duration*100):0;exportFill.style.width=pct.toFixed(2)+'%';exportState.textContent=exportCancel?'cancelling':('validating audio + exporting '+Math.floor(pct)+'%');if(maxSeconds&&audio.currentTime>=maxSeconds){pushExportLog('test export duration reached',{maxSeconds,currentTime:audio.currentTime});try{audio.pause()}catch(e){}if(exportRecorder&&exportRecorder.state!=='inactive')exportRecorder.stop();return}if(exportCancel){try{audio.pause()}catch(e){}if(exportRecorder&&exportRecorder.state!=='inactive')exportRecorder.stop();return}exportRaf=requestAnimationFrame(tick)};
+    exportRecorder.start(1000);exportStartWall=performance.now();pushExportLog('starting playback for recording',{maxSeconds:maxSeconds||'full',recordSpeed:'1x-normal'});await audio.play();pushExportLog('playback started',{duration:audio.duration,currentTime:audio.currentTime,readyState:audio.readyState,paused:audio.paused});playBtn.textContent='Pause';validatorState.textContent='EXPORT_RECORDING_VALIDATING';setExportReason('Recording + validating in progress.','The app is sampling the exact mixed recorder input. If the recorder input has no audio energy, it will refuse to download or save a fake/silent export and will explain why.');tick();audio.onended=()=>{playBtn.textContent='Play';validatorState.textContent=exporting?'EXPORT_FINALIZING':'ENDED';if(exporting&&exportRecorder&&exportRecorder.state!=='inactive')setTimeout(()=>exportRecorder.stop(),250)};
+    await stopped;if(exportRaf)cancelAnimationFrame(exportRaf);stopTracksSafely(videoStream.getTracks(),'export-video');stopTracksSafely(recorderAudioOwnedTracks,'export-audio-clones');if(validationProbe&&validationProbe.close)validationProbe.close();cleanupExportAudioDestination();restoreAudioEnded();audio.playbackRate=1;
+    if(exportCancel){exportState.textContent='cancelled';exportInfo.textContent='Export cancelled.';validatorState.textContent='EXPORT_CANCELLED';setTimeout(()=>exportPanel.classList.remove('active'),1200);exporting=false;return null}
+    const outType=exportRecorder&&exportRecorder.mimeType?exportRecorder.mimeType:exportMime;const ext=(outType||'').includes('mp4')?'mp4':'webm';const blob=new Blob(exportChunks,{type:outType||'video/webm'});const validation=validateRecordedInput(validationProbe,blob,maxSeconds);pushExportLog('post-record input validation result',validation);
+    if(!validation.ok){failClean('Export blocked: recorder-input validation failed.',validation.problems.join('\n'));exportInfo.textContent='No file downloaded. '+validation.problems[0];exporting=false;return {blob:null,filename:null,validation}}
+    validatorState.textContent='EXPORT_PLAYBACK_VALIDATING';exportInfo.textContent='Recorder audio passed. Verifying the finished video blob can actually play before download/Vault save...';
+    const playbackValidation=await validateBlobCanActuallyPlay(blob,maxSeconds||Math.min(audio.duration||0,10),'browser-record '+ext);
+    validation.playback=playbackValidation;pushExportLog('post-record blob playback validation result',playbackValidation);
+    if(!playbackValidation.ok){const why=(playbackValidation.problems&&playbackValidation.problems.length)?playbackValidation.problems.join('\n'):'finished blob failed playback validation';failClean('Export blocked: finished video does not play.',why);exportInfo.textContent='No file downloaded. '+why;exporting=false;return {blob:null,filename:null,validation}}
+    const filename=getExportTitle(tr).replace(/[^\w\-]+/g,'_').slice(0,80)+(maxSeconds?'_10s_Test':'')+'_Voxel_Audio_Visualizer.'+ext;addSessionExport(blob,filename,maxSeconds?'browser-record-test':'browser-record-full',captureCurrentExportMeta(tr,maxSeconds?'browser-record-test':'browser-record-full'));const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);exportState.textContent='complete';exportInfo.textContent='Validated + downloaded playable visualizer video: '+filename+' — also saved in Session Export Vault.';setExportReason('Export validated and completed.','Recorder input audio passed validation: '+validation.stats.nonSilent+'/'+validation.stats.samples+' non-silent samples, peak='+Math.round(validation.stats.peak)+', size='+formatBytes(blob.size)+'. Blob playback validated duration='+playbackValidation.duration.toFixed(2)+'s.');exportFill.style.width='100%';validatorState.textContent='EXPORT_VALIDATED_COMPLETE';exporting=false;return {blob,filename,validation};
+  }catch(err){console.error(err);const msg=String(err&&err.message||err);pushExportLog('fatal export exception',{message:msg,stack:err&&err.stack});setExportReason('Export failed before download.',msg);exportState.textContent='failed';exportInfo.textContent=msg;validatorState.textContent='EXPORT_FAILED';if(exportRaf)cancelAnimationFrame(exportRaf);if(videoStream)stopTracksSafely(videoStream.getTracks(),'export-video-after-fail');stopTracksSafely(recorderAudioOwnedTracks,'export-audio-clones-after-fail');if(validationProbe&&validationProbe.close)validationProbe.close();cleanupExportAudioDestination();restoreAudioEnded();audio.playbackRate=1;exporting=false;return null}}
+async function runExportChainSmokeTest(){
+  const tr=prepareChainTestTrack();if(!tr)return;exportPanel.classList.add('active');resetExportRunLog(tr);pushExportLog('starting chained repeat-export validation test',{runs:3,secondsEach:3,track:tr.name,autoArtist:getExportArtist(),fallbackArt:!tr.imageFile});setExportReason('Chain Test running with self-validation.','No manual input required. Each run must prove recorder-input audio energy and finished-blob playback before it is allowed into the Vault or downloads. If run #2/#3 would be silent, it blocks and says why.');
+  for(let i=1;i<=3;i++){pushExportLog('chain test run begin',{run:i});const result=await startFullVideoExport(3);if(!result||!result.blob||!result.validation||!result.validation.ok){pushExportLog('chain test failed validation',{run:i,result});const why=result&&result.validation&&result.validation.problems?result.validation.problems.join('\n'):'Export returned no validated blob.';setExportReason('Chain Test blocked on run '+i+'.',why+'\nNo invalid export was saved. Use Download Run Log for exact recorder/capture diagnostics.');validatorState.textContent='CHAIN_TEST_VALIDATION_FAILED';return}pushExportLog('chain test run validated',{run:i,bytes:result.blob.size,filename:result.filename,validation:result.validation});await new Promise(r=>setTimeout(r,650))}
+  setExportReason('Chain Test passed.','Three repeat exports validated recorder-input audio and playable finished blobs before download/Vault save. Now Record Full has a meaningful quick proof instead of wasting a full-song render.');validatorState.textContent='CHAIN_TEST_VALIDATED_COMPLETE'}
 function cancelExport(){if(!exporting)return;audio.playbackRate=1;exportCancel=true;exportState.textContent='cancelling';validatorState.textContent='EXPORT_CANCELLING';try{audio.pause()}catch(e){}if(exportRecorder&&exportRecorder.state!=='inactive')exportRecorder.stop()}
 
 
@@ -1828,7 +1995,7 @@ album:{title:'Album Route Builder',html:`<p>Album Route Builder is active in thi
 bindingmaps:{title:'Binding Maps',html:`<p>Export Bindings downloads a JSON map of track path, title, color, and image filename metadata. Import Bindings matches loaded tracks by path/name and restores metadata where possible.</p><p>Browser security may require rebinding actual image files because pages cannot silently reload arbitrary local file blobs.</p>`},
 watermark:{title:'Watermark Policy',html:`<p>The local/free Browser Record path includes a visible Voxel Audio watermark scaffold.</p><ul><li>Free: watermarked browser Record exports, 5/week once accounts exist.</li><li>$3 USD/month: 99 server FFmpeg exports/month.</li><li>$7 USD/month: unlimited no-watermark Record + server FFmpeg exports.</li></ul><p>Account entitlement checks will control watermark removal later.</p>`},
 pro:{title:'Pricing / Accounts Plan',html:`<p><strong>Voxel Audio</strong> is planned as a 3-tier USD export model once Google OAuth, Stripe, and server FFmpeg rendering are connected.</p><h3>Free account</h3><ul><li><strong>$0 USD</strong></li><li>Browser Record exports</li><li>Watermark on free exports</li><li>5 exports/week once accounts are released</li><li>Local folder playback, search, image binding, and preview remain available</li></ul><h3>Server FFmpeg tier</h3><ul><li><strong>$3 USD/month</strong></li><li>99 server FFmpeg exports/month</li><li>Server-side MP4 rendering powered by FFmpeg</li><li>Google OAuth login planned</li><li>Stripe subscription integration planned</li></ul><h3>Unlimited Creator tier</h3><ul><li><strong>$7 USD/month</strong></li><li>Unlimited no-watermark browser Record exports</li><li>Unlimited no-watermark server FFmpeg exports</li><li>Best fit for creators releasing visualizers regularly</li></ul><p>Until the server/account layer is built, the no-server local build remains the baseline app.</p>`},
-release:{title:'Release Notes',html:`<ul><li>Live Export Preview added.</li><li>Export waveform smoothing added for less choppy visual motion.</li><li>Panel fit and Recenter added.</li><li>Song name export input added.</li><li>Voxel RGB color drives export accent color and app accent color when a song is selected.</li><li>Album Route Builder added for full-album FFmpeg kit export.</li><li>FFmpeg MP4 Kit is the final-output route.</li><li>Browser Record stays normal 1x song speed.</li><li>v1.8.0 adds Lite mode, background caching, hidden-tab pause, Web Node draw caps, and an automatic performance governor.</li></ul>`}
+release:{title:'Release Notes',html:`<ul><li>Live Export Preview added.</li><li>Export waveform smoothing added for less choppy visual motion.</li><li>Panel fit and Recenter added.</li><li>Song name export input added.</li><li>Voxel RGB color drives export accent color and app accent color when a song is selected.</li><li>Album Route Builder added for full-album FFmpeg kit export.</li><li>FFmpeg MP4 Kit is the final-output route.</li><li>Browser Record stays normal 1x song speed.</li><li>v1.8.16 keeps Lite mode, background caching, hidden-tab pause, Web Node draw caps, and adds recorder-input plus finished-blob playback validation before Browser Record downloads or Vault saves.</li></ul>`}
 };
 function openDocs(route='overview'){
   docsOverlay.classList.add('active');
@@ -1917,7 +2084,7 @@ function safeBindControls(){
 function setHubVisible(next){hubVisible=next;document.body.classList.toggle('hub-clean',!hubVisible);rightPanel.classList.toggle('hidden',!hubVisible);if(!hubVisible){hoverCard.style.display='none';dropHint.classList.remove('hot')}document.getElementById('hubToggleBtn').textContent='Hub: '+(hubVisible?'Visible':'Hidden');document.getElementById('hubFooter').textContent='hub='+(hubVisible?'visible':'hidden')}
 document.addEventListener('dragover',e=>{if(dropHasDirectory(e)){e.preventDefault();dropHint.classList.add('hot')}},true);document.addEventListener('drop',async e=>{if(!dropHasDirectory(e))return;e.preventDefault();e.stopImmediatePropagation();await loadDroppedFolder(e)},true);document.addEventListener('dragleave',e=>{if(e.target===document.documentElement||e.target===document.body)dropHint.classList.remove('hot')},true);
 searchInput.oninput=()=>{searchQuery=searchInput.value;hovered=null;refreshVisible();renderLists();updatePathBar();updateStatus(true)};
-document.getElementById('resetBtn').onclick=resetToStartupState;document.getElementById('recenterBtn').onclick=()=>{fitView();validatorState.textContent='RECENTERED';updateStatus(true)};document.getElementById('backBtn').onclick=backOutOfZoomOrFocus;document.getElementById('applySeedBtn').onclick=()=>{const n=(seedInput.value||'').trim().toUpperCase();if(n){seedHex=n;rebuild()}};document.getElementById('randomSeedBtn').onclick=()=>{seedHex=randomHexSeed();rebuild()};mainViewBtn.onclick=()=>{mainView=mainView==='icon'?'web':'icon';mainViewBtn.textContent='Current View: '+(mainView==='icon'?'Voxel Icon':'Web Node');viewFooter.textContent='view='+mainView;fitView()};themeBtn.onclick=()=>{theme=theme==='dark'?'light':'dark';themeBtn.textContent='Theme: '+(theme==='dark'?'Dark':'Light');invalidateBackgroundCache()};qualityBtn.onclick=()=>{const order=['lite','eco','auto','high'];setQuality(order[(order.indexOf(qualityMode)+1)%order.length]);rebuild()};safeBindControls();exportBtn.onclick=buildDeterministicRenderKit;infoBtn.onclick=()=>openDocs('overview');albumRouteBtn.onclick=openAlbumRoute;closeAlbumBtn.onclick=closeAlbumRoute;albumAddSelectedBtn.onclick=()=>{const tr=currentTrack||objectById(focusedObjectId);if(tr)uniquePushAlbum([tr.id]);else albumReason.textContent='No selected track.'};albumAddVisibleBtn.onclick=()=>uniquePushAlbum(visibleCache.map(o=>o.id));albumAddFolderBtn.onclick=addCurrentFolderToAlbum;albumAddAllBtn.onclick=()=>uniquePushAlbum(objects.filter(o=>o.file).map(o=>o.id));albumClearBtn.onclick=()=>{albumRouteIds=[];renderAlbumRoute()};albumUseCurrentImageBtn.onclick=useCurrentImageAsAlbumFallback;albumApplyColorAllBtn.onclick=applyAlbumColorToAll;albumResetColorsBtn.onclick=resetAlbumColors;albumBuildBtn.onclick=buildAlbumKit;closeDocsBtn.onclick=closeDocs;docsOverlay.addEventListener('click',e=>{if(e.target===docsOverlay)closeDocs()});previewExportBtn.onclick=openExportPreview;previewPlayBtn.onclick=playPreviewTrack;closePreviewBtn.onclick=closeExportPreview;recordExportBtn.onclick=()=>startFullVideoExport(null);testExportBtn.onclick=()=>startFullVideoExport(10);formatBtn.onclick=cycleExportFormat;kitSpeedBtn.onclick=cycleKitSpeed;preflightBtn.onclick=()=>runExportPreflight(true);cancelExportBtn.onclick=cancelExport;downloadLogBtn.onclick=downloadRunLog;copyLogBtn.onclick=copyRunLog;document.getElementById('hubToggleBtn').onclick=()=>setHubVisible(!hubVisible);
+document.getElementById('resetBtn').onclick=resetToStartupState;document.getElementById('recenterBtn').onclick=()=>{fitView();validatorState.textContent='RECENTERED';updateStatus(true)};document.getElementById('backBtn').onclick=backOutOfZoomOrFocus;document.getElementById('applySeedBtn').onclick=()=>{const n=(seedInput.value||'').trim().toUpperCase();if(n){seedHex=n;rebuild()}};document.getElementById('randomSeedBtn').onclick=()=>{seedHex=randomHexSeed();rebuild()};mainViewBtn.onclick=()=>{mainView=mainView==='icon'?'web':'icon';mainViewBtn.textContent='Current View: '+(mainView==='icon'?'Voxel Icon':'Web Node');viewFooter.textContent='view='+mainView;fitView()};themeBtn.onclick=()=>{theme=theme==='dark'?'light':'dark';themeBtn.textContent='Theme: '+(theme==='dark'?'Dark':'Light');invalidateBackgroundCache()};qualityBtn.onclick=()=>{const order=['lite','eco','auto','high'];setQuality(order[(order.indexOf(qualityMode)+1)%order.length]);rebuild()};safeBindControls();exportBtn.onclick=buildDeterministicRenderKit;infoBtn.onclick=()=>openDocs('overview');albumRouteBtn.onclick=openAlbumRoute;closeAlbumBtn.onclick=closeAlbumRoute;albumAddSelectedBtn.onclick=()=>{const tr=currentTrack||objectById(focusedObjectId);if(tr)uniquePushAlbum([tr.id]);else albumReason.textContent='No selected track.'};albumAddVisibleBtn.onclick=()=>uniquePushAlbum(visibleCache.map(o=>o.id));albumAddFolderBtn.onclick=addCurrentFolderToAlbum;albumAddAllBtn.onclick=()=>uniquePushAlbum(objects.filter(o=>o.file).map(o=>o.id));albumClearBtn.onclick=()=>{albumRouteIds=[];renderAlbumRoute()};albumUseCurrentImageBtn.onclick=useCurrentImageAsAlbumFallback;albumApplyColorAllBtn.onclick=applyAlbumColorToAll;albumResetColorsBtn.onclick=resetAlbumColors;albumBuildBtn.onclick=buildAlbumKit;closeDocsBtn.onclick=closeDocs;docsOverlay.addEventListener('click',e=>{if(e.target===docsOverlay)closeDocs()});previewExportBtn.onclick=openExportPreview;previewPlayBtn.onclick=playPreviewTrack;closePreviewBtn.onclick=closeExportPreview;recordExportBtn.onclick=()=>startFullVideoExport(null);testExportBtn.onclick=()=>startFullVideoExport(10);const chainExportBtn=document.getElementById('chainExportBtn');if(chainExportBtn)chainExportBtn.onclick=runExportChainSmokeTest;formatBtn.onclick=cycleExportFormat;kitSpeedBtn.onclick=cycleKitSpeed;preflightBtn.onclick=()=>runExportPreflight(true);cancelExportBtn.onclick=cancelExport;downloadLogBtn.onclick=downloadRunLog;copyLogBtn.onclick=copyRunLog;document.getElementById('hubToggleBtn').onclick=()=>setHubVisible(!hubVisible);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAlbumRoute();closeDocs();closeExportPreview&&closeExportPreview()}});
 function governPerformance(cost,budget){if(!cost||!budget)return;frameCostAvg=frameCostAvg?frameCostAvg*.92+cost*.08:cost;frameCostSamples++;if(frameCostSamples<45||tNow-lastQualityShift<4500)return;const over=frameCostAvg>budget*.92;if(!over)return;if(qualityMode==='high'){lastQualityShift=tNow;setQuality('auto');showBootDiag('Performance governor moved High → Auto to keep playback smooth.');return}if(qualityMode==='auto'){lastQualityShift=tNow;setQuality('eco');showBootDiag('Performance governor moved Auto → Eco for smoother weak-hardware playback.');return}if(qualityMode==='eco'){lastQualityShift=tNow;setQuality('lite');showBootDiag('Performance governor moved Eco → Lite because frame cost stayed high.')}}
 function frame(t){requestAnimationFrame(frame);if(document.hidden)return;tNow=t;readAudio();if(t-lastFrame>=1000/Q.fps){lastFrame=t;const start=performance.now();mainView==='icon'?drawIconView():drawWebView();const cost=performance.now()-start;governPerformance(cost,1000/Q.fps);updateStatus(false)}if(t-lastWaveFrame>=1000/(Q.waveFps||Q.fps)){lastWaveFrame=t;drawWave()}}installAutoQuality();resize();rebuild();runStartupSelfTest();requestAnimationFrame(frame);

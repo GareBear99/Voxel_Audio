@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.8.16 — Playable Blob Gate + Comment Audit
+
+- Added a second self-validation gate: finished Browser Record blobs must load, report a sane duration, seek, and advance playback in a muted video element before the app downloads or saves them to the Vault.
+- Chain Test now requires both recorder-input audio validation and finished-blob playback validation for all three runs.
+- Updated export comments so the recorder lifecycle, cloned-track cleanup, WebAudio fallback, and validation gates match the actual code.
+- Updated stale release-status references from v1.8.0 to v1.8.16.
+- Browser Record remains a convenience path; Build MP4 Kit / FFmpeg remains the deterministic final release path.
+
 ## v1.8.10 — Restore Browser MP4 with direct audio capture
 
 - Restored Browser Record MP4 as an available option.

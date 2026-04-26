@@ -1,4 +1,4 @@
-# Release Status — v1.8.0
+# Release Status — v1.8.16
 
 ## Status
 
@@ -55,6 +55,6 @@ All pricing is planned in USD once accounts/server rendering exist:
 The current no-server build can generate local browser recordings and FFmpeg kits, but a real paid no-watermark product cannot depend on a client-side admin key. Paid entitlement must be verified server-side.
 
 
-## v1.8.0 production-hardening verdict
+## v1.8.16 production-hardening verdict
 
 The local single-file app is now suitable as a production-track no-server release candidate for creator testing. The remaining gap to a fully commercial SaaS platform is not renderer quality; it is account infrastructure: OAuth, Stripe, quota ledgers, secure entitlement checks, server FFmpeg rendering, abuse controls, and hosted storage.

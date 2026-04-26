@@ -1,6 +1,6 @@
-# Extensive Audit Report — v1.8.0 Production Hardening
+# Extensive Audit Report — v1.8.16 Production Hardening
 
-This audit reviews the current single-file Voxel Audio package after the low-weight render/sync pass and the v1.8.0 production hardening pass.
+This audit reviews the current single-file Voxel Audio package after the low-weight render/sync pass and the v1.8.16 production hardening pass.
 
 ## Audit scope
 
@@ -50,7 +50,7 @@ This is the correct low-weight direction because the app avoids forcing every vi
 
 
 
-### v1.8.0 hardening additions
+### v1.8.16 hardening additions
 
 - Static main-background cache removes repeated radial-gradient/grid work from the hot render loop.
 - Hidden-tab pause skips scene/wave drawing when the page is not visible.

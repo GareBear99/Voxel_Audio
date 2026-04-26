@@ -70,7 +70,7 @@ Use the browser only to prepare the render:
 This avoids long real-time browser capture sessions.
 
 
-## v1.8.0 render governor
+## v1.8.16 render governor
 
 Voxel Audio now measures main scene draw cost and automatically steps quality down when the current mode cannot keep its frame budget. The downgrade path is:
 
